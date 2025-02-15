@@ -1,0 +1,6 @@
+﻿@model List<Template>
+
+@foreach (var template in Model)
+{
+    <partial name="_TemplateCardPartial" model="template" />
+}

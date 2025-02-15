@@ -1,0 +1,124 @@
+﻿@model Template
+
+<div class="container">
+    <h2>@Model.Title</h2>
+    <p>Tags: @string.Join(",", Model.TemplateTags.Select(t => t.Tag.TagName))</p>
+
+    <form method="post" asp-action="SubmitResponse">
+        <input type="hidden" name="TemplateId" value="@Model.Id" />
+
+        @if (Model.CustomString1State)
+        {
+            <div class="mb-3">
+                <label>@Model.CustomString1Question</label>
+                <input type="text" name="CustomString1Answer" class="form-control" required />
+            </div>
+        }
+        @if (Model.CustomString2State)
+        {
+            <div class="mb-3">
+                <label>@Model.CustomString2Question</label>
+                <input type="text" name="CustomString2Answer" class="form-control" required />
+            </div>
+        }
+        @if (Model.CustomString3State)
+        {
+            <div class="mb-3">
+                <label>@Model.CustomString3Question</label>
+                <input type="text" name="CustomString3Answer" class="form-control" required />
+            </div>
+        }
+        @if (Model.CustomString4State)
+        {
+            <div class="mb-3">
+                <label>@Model.CustomString4Question</label>
+                <input type="text" name="CustomString4Answer" class="form-control" required />
+            </div>
+        }
+        @if (Model.CustomMultiLine1State)
+        {
+            <div class="mb-3">
+                <label>@Model.CustomMultiLine1Question</label>
+                <textarea name="CustomMultiLine1Answer" class="form-control"></textarea>
+            </div>
+        }
+        @if (Model.CustomMultiLine2State)
+        {
+            <div class="mb-3">
+                <label>@Model.CustomMultiLine2Question</label>
+                <textarea name="CustomMultiLine2Answer" class="form-control"></textarea>
+            </div>
+        }
+        @if (Model.CustomMultiLine3State)
+        {
+            <div class="mb-3">
+                <label>@Model.CustomMultiLine3Question</label>
+                <textarea name="CustomMultiLine3Answer" class="form-control"></textarea>
+            </div>
+        }
+        @if (Model.CustomMultiLine4State)
+        {
+            <div class="mb-3">
+                <label>@Model.CustomMultiLine4Question</label>
+                <textarea name="CustomMultiLine4Answer" class="form-control"></textarea>
+            </div>
+        }
+        @if (Model.CustomInt1State)
+        {
+            <div class="mb-3">
+                <label>@Model.CustomInt1Question</label>
+                <input type="number" name="CustomInt1Answer" class="form-control">
+            </div>
+        }
+        @if (Model.CustomInt2State)
+        {
+            <div class="mb-3">
+                <label>@Model.CustomInt2Question</label>
+                <input type="number" name="CustomInt2Answer" class="form-control">
+            </div>
+        }
+        @if (Model.CustomInt3State)
+        {
+            <div class="mb-3">
+                <label>@Model.CustomInt3Question</label>
+                <input type="number" name="CustomInt3Answer" class="form-control">
+            </div>
+        }
+        @if (Model.CustomInt4State)
+        {
+            <div class="mb-3">
+                <label>@Model.CustomInt4Question</label>
+                <input type="number" name="CustomInt4Answer" class="form-control">
+            </div>
+        }
+        @if (Model.CustomCheckbox1State)
+        {
+            <div class="mb-3">
+                <input type="hidden" name="CustomCheckbox1Answer" value="false" />
+                <input type="checkbox" name="CustomCheckbox1Answer" value="true"> @Model.CustomCheckbox1Question
+            </div>
+        }
+        @if (Model.CustomCheckbox2State)
+        {
+            <div class="mb-3">
+                <input type="hidden" name="CustomCheckbox2Answer" value="false" />
+                <input type="checkbox" name="CustomCheckbox2Answer" value="true"> @Model.CustomCheckbox2Question
+            </div>
+        }
+        @if (Model.CustomCheckbox3State)
+        {
+            <div class="mb-3">
+                <input type="hidden" name="CustomCheckbox3Answer" value="false" />
+                <input type="checkbox" name="CustomCheckbox3Answer" value="true"> @Model.CustomCheckbox3Question
+            </div>
+        }
+        @if (Model.CustomCheckbox4State)
+        {
+            <div class="mb-3">
+                <input type="hidden" name="CustomCheckbox4Answer" value="false" />
+                <input type="checkbox" name="CustomCheckbox4Answer" value="true"> @Model.CustomCheckbox4Question
+            </div>
+        }
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
+</div>

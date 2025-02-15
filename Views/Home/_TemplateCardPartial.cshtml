@@ -1,0 +1,9 @@
+﻿@model Template
+
+<div class="card my-3">
+    <div class="card-body">
+        <h5 class="card-title">@Model.Title</h5>
+        <p class="card-text text-muted">Created on @Model.DateCreated.ToShortDateString()</p>
+        <a href="/Template/Response/@Model.Id" class="btn btn-primary">View Template</a>
+    </div>
+</div>

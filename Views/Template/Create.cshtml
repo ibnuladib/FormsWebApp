@@ -1,0 +1,151 @@
+﻿@model FormsWebApplication.Models.Template
+@{
+	ViewData["Title"] = "Create Template";
+}
+<h2>Create Template</h2>
+
+<form id="CreateTemplateForm" asp-controller="Template" asp-action="Create" method="post">
+	@Html.AntiForgeryToken()
+	<div class="fom-group">
+		<label asp-for="Title">Title</label>
+		<input asp-for="Title" class="form-control" required/>
+		<span asp-validation-for="Title" class="text-danger"></span>
+	</div>
+	@* <div class="form-group"> *@
+	@* 	<label asp-for="Description">Description</label> *@
+	@* 	<textarea asp-for="Description" class="form-control" rows="3"></textarea> *@
+	@* </div> *@
+
+	@* <div class="form-group"> *@
+	@* 	<label>Tags</label> *@
+	@* 	<input type="text" id="tagsInput" class="form-control" placeholder="Enter tags..." /> *@
+	@* 	<div id="tagsDropdown" class="dropdown-menu"></div> *@
+	@* </div> *@
+
+	<h4>Custom Questions</h4>
+	<button type="button" id="addQuestionBtn" class="btn btn-secondary">+ Add Question</button>
+	<div id="questionsContainer"></div>
+
+	<button type="submit" class="btn btn-primary">Create</button>
+</form>
+
+<script>
+    // document.getElementById("tagsInput").addEventListener("input", function() {
+    //     let query = this.value;
+    //     if (query.length > 0) {
+    //         fetch(`/Tag/Search?query=${query}`)
+    //             .then(response => response.json())
+    //             .then(data => {
+    //                 let dropdown = document.getElementById("tagsDropdown");
+    //                 dropdown.innerHTML = "";
+    //                 data.forEach(tag => {
+    //                     let option = document.createElement("div");
+    //                     option.classList.add("dropdown-item");
+    //                     option.textContent = tag;
+    //                     option.addEventListener("click", function() {
+    //                         document.getElementById("tagsInput").value = tag;
+    //                         dropdown.innerHTML = "";
+    //                     });
+    //                     dropdown.appendChild(option);
+    //                 });
+    //                 dropdown.style.display = "block";
+    //             });
+    //     }
+    // });
+    let questionCounts = {
+        "CustomString": 0,
+        "CustomMultiLine": 0,
+        "CustomInt": 0,
+        "CustomCheckbox": 0
+    };
+
+    document.getElementById("addQuestionBtn").addEventListener("click", function () {
+        let container = document.getElementById("questionsContainer");
+
+        let questionTypes = {
+            "CustomString": { name: "Single-line", type: "text" },
+            "CustomMultiLine": { name: "Multi-line", type: "textarea" },
+            "CustomInt": { name: "Positive Integer", type: "textarea" },
+            "CustomCheckbox": { name: "Checkbox", type: "text" }
+        };
+
+        let questionDiv = document.createElement("div");
+        questionDiv.classList.add("form-group", "mb-3");
+
+        // Dropdown to select question type
+        let select = document.createElement("select");
+        select.classList.add("form-control", "mb-2");
+        for (let key in questionTypes) {
+            let option = document.createElement("option");
+            option.value = key;
+            option.textContent = questionTypes[key].name;
+            select.appendChild(option);
+        }
+
+        let inputField = document.createElement("input");
+        inputField.classList.add("form-control");
+        inputField.placeholder = "Enter question";
+
+        let hiddenField = document.createElement("input");
+        hiddenField.type = "hidden"; // Stores the actual question text
+
+        let stateField = document.createElement("input");
+        stateField.type = "hidden"; // Stores true/false for the state
+
+        function updateFieldNames(selectedType) {
+            let typeKey = selectedType;
+            let count = ++questionCounts[typeKey]; // Increment counter for this type
+
+            let fieldPrefix = typeKey + count; // Example: CustomInt1, CustomInt2, etc.
+            hiddenField.name = fieldPrefix + "Question"; // Example: CustomInt1Question
+            stateField.name = fieldPrefix + "State"; // Example: CustomInt1State
+        }
+
+        select.addEventListener("change", function () {
+            let selectedType = select.value;
+            updateFieldNames(selectedType);
+
+            let selectedTypeObj = questionTypes[selectedType];
+            if (selectedTypeObj.type === "textarea") {
+                let textarea = document.createElement("textarea");
+                textarea.classList.add("form-control");
+                textarea.placeholder = "Enter question";
+                textarea.addEventListener("input", function () {
+                    hiddenField.value = textarea.value;
+                    stateField.value = textarea.value ? "true" : "false";
+                });
+
+                questionDiv.replaceChild(textarea, inputField);
+                inputField = textarea;
+            } else {
+                let newInput = document.createElement("input");
+                newInput.classList.add("form-control");
+                newInput.type = selectedTypeObj.type;
+                newInput.placeholder = "Enter question";
+                newInput.addEventListener("input", function () {
+                    hiddenField.value = newInput.value;
+                    stateField.value = newInput.value ? "true" : "false";
+                });
+
+                questionDiv.replaceChild(newInput, inputField);
+                inputField = newInput;
+            }
+        });
+
+        inputField.addEventListener("input", function () {
+            hiddenField.value = inputField.value;
+            stateField.value = inputField.value ? "true" : "false";
+        });
+
+        // Initialize field names when first added
+        updateFieldNames(select.value);
+
+        questionDiv.appendChild(select);
+        questionDiv.appendChild(inputField);
+        questionDiv.appendChild(hiddenField);
+        questionDiv.appendChild(stateField);
+        container.appendChild(questionDiv);
+    });
+</script>
+
+

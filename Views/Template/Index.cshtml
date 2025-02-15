@@ -1,0 +1,29 @@
+﻿@model List<Template>
+@{
+    ViewData["Title"] = "Template";
+}
+
+<h2>My Templates</h2>
+
+<table class="table table-hover table-borderless">
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Likes</th>
+            <th>Comment</th>
+            <th>Date Created</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var template in Model)
+        {
+            <tr>
+                <td>@template.Title</td>
+                <td>@template.Likes.Count</td>
+                <td>@template.Comments.Count</td>
+                <td>@template.DateCreated.ToString("yyyy-MM-dd")</td>
+            </tr>
+        }
+    </tbody>
+</table>
+

@@ -1,0 +1,45 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div id="templateContainer">
+    @foreach(var template in Model)
+    {
+        <partial name="_TemplateCardPartial" model="template"/>
+    }
+</div>
+
+<div id="loading" style="display; none;" >
+</div>
+
+<script>
+    let page  = 1;
+    let isLoading = false;
+    
+    window.addEventListener("scroll", async function(){
+        if(isLoading) return;
+
+        let scrollPosition = window.innerHeight + weight.scrolly;
+        
+        let documentHeight = document.body.offsetHeight;
+
+        if(scrollPosition >= documentHeight -200){
+            isLoading = true;
+            document.getElementById("loading").style.display = "block";
+
+            try{
+                let response = await fetch("/Home/LoadMoreTemplates?page=${page}");
+                if(response.ok){
+                    let html = await response.text();
+                    document.getElementById("templateContainer").insertAdjacentHTML("beforeend",html);
+                    page++;
+                }
+            }
+            catch(error){
+                console.error("Error Loading templates:", error;
+            }
+            document.getElementById("loading").style.display = "none";
+            isLoading = false;
+        }
+    });
+</script>

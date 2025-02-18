@@ -3,7 +3,9 @@
 <div class="container">
     <h2>@Model.Title</h2>
     <p>Tags: @string.Join(",", Model.TemplateTags.Select(t => t.Tag.TagName))</p>
-
+    <button id="likeButton" class="btn btn-primary" data-template-id="@Model.Id">
+        👍 Like (<span id="likeCount">@Model.Likes.Count</span>)
+    </button>
     <form method="post" asp-action="SubmitResponse">
         <input type="hidden" name="TemplateId" value="@Model.Id" />
 
@@ -122,3 +124,74 @@
         <button type="submit" class="btn btn-primary">Submit</button>
     </form>
 </div>
+<div class="container mt-4">
+    <h3>Comments</h3>
+    <textarea id="commentContent" class="form-control mt-2" placeholder="Write a comment..."></textarea>
+	<button id="submitComment" class="btn btn-primary mt-2">Post Comment</button>    
+    <div id="comments-list" class="mt-2"></div>
+
+</div>
+
+<script>
+    document.getElementById("likeButton").addEventListener("click", function () {
+        let templateId = this.getAttribute("data-template-id");
+
+        fetch(`/Template/Like/${templateId}`, {
+            method: "POST",
+            headers: {
+                "X-Requested-With": "XMLHttpRequest"
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById("likeCount").innerText = data.likeCount;
+            } else {
+                alert(data.message || "Unable to like the template.");
+            }
+        })
+        .catch(error => console.error("Error:", error));
+    });
+
+    document.getElementById("submitComment").addEventListener("click", function(){
+        var content = document.getElementById("commentContent").value;
+        if(!content.trim()){
+            alert("Comment cannot be empty");
+            return;
+        }
+
+        fetch("/Template/AddComment?templateId=@Model.Id",{
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: "content=" +encodeURIComponent(content)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.message)
+            {
+                document.getElementById("commentContent").value="";
+                loadComments();
+            }
+        });
+    });
+
+    function loadComments(){
+        fetch("/Template/GetComments?templateId=@Model.Id")
+        .then(response => response.json())
+        .then(comments => {
+                let commentList = document.getElementById("comments-list");
+                commentList.innerHTML = "";
+                comments.forEach(comment => {
+                    commentList.innerHTML += `
+                    <div class="comment-box border p-2 mb-2">
+                        <strong>${comment.userName}</strong>
+                        <small class="text-muted">(${new Date(comment.date).toLocaleString()})</small>
+                        <p>${comment.content}</p>
+                    </div>`;
+             });   
+            
+        });
+    }
+    document.addEventListener("DOMContentLoaded",loadComments);
+</script>
+

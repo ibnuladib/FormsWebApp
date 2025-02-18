@@ -1,4 +1,5 @@
-﻿using FormsWebApplication.Interface;
+﻿using System.Security.Claims;
+using FormsWebApplication.Interface;
 using FormsWebApplication.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -49,24 +50,6 @@ namespace FormsWebApplication.Controllers
         [HttpPost]
         public async Task<IActionResult> SubmitResponse(Answer model)
         {
-            //if (!ModelState.IsValid)
-            //{
-            //    var errors = ModelState.Values.SelectMany(v => v.Errors)
-            //                                  .Select(e => e.ErrorMessage)
-            //                                  .ToList();
-            //    foreach (var error in errors)
-            //    {
-            //        Console.WriteLine($"Model Error: {error}");
-            //    }
-
-            //    var template = await _templateService.GetTemplateByIdAsync(model.TemplateId);
-            //    if (template == null)
-            //    {
-            //        return NotFound();
-            //    }
-            //    return View("Response", template);
-            //}
-
             string? userId = _userManager.GetUserId(User);
             model.UserId = _userManager.GetUserId(User);
             if (string.IsNullOrEmpty(model.UserId))
@@ -124,24 +107,25 @@ namespace FormsWebApplication.Controllers
         }
 
         // GET: TemplateController/Edit/5
-        public ActionResult Edit(int id)
+        public async Task<ActionResult> Edit(int id)
         {
-            return View();
+            var template = await _templateService.GetTemplateForEditAsync(id);
+            if (template == null) return NotFound();
+            return View(template);
         }
 
         // POST: TemplateController/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit(int id, IFormCollection collection)
+        public async Task<ActionResult> Edit(int id, [FromForm] Template updatedTemplate)
         {
-            try
-            {
-                return RedirectToAction(nameof(Index));
-            }
-            catch
-            {
-                return View();
-            }
+            string? userId = _userManager?.GetUserId(User);
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            bool success = await _templateService.UpdateTemplateAsync(id, updatedTemplate, userId);
+            if (!success) { return BadRequest("Could not update Template"); }
+
+            return View(updatedTemplate);
         }
 
         // GET: TemplateController/Delete/5
@@ -163,6 +147,45 @@ namespace FormsWebApplication.Controllers
             {
                 return View();
             }
+        }
+
+        [HttpPost]
+        [Route("Template/Like/{templateId}")]
+        public async Task<IActionResult> LikeTemplate(int templateId)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier); // Get logged-in user
+            if (userId == null)
+            {
+                return Unauthorized();
+            }
+
+            var result = await _templateService.LikeTemplateAsync(templateId, userId);
+
+            return Ok(new { success = result, likeCount = await _templateService.GetLikeCountAsync(templateId) });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> AddComment(int templateId, string content)
+        {
+            var userId = _userManager.GetUserId(User);
+            if (userId == null) { return Unauthorized(); }
+            if (string.IsNullOrEmpty(content)) { return BadRequest("empty comment"); }
+
+            var result = await _templateService.AddCommentAsync(templateId, userId, content);
+            return Ok(new { success = result, message = "Comment Added Sucessfully" });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetComments(int templateId)
+        {
+            var comments = await _templateService.GetCommentsAsync(templateId);
+            return Ok(comments.Select( c => new
+            {
+                c.Id,
+                c.Content,
+                c.Date,
+                UserName = c.User.UserName
+            }));
         }
     }
 }

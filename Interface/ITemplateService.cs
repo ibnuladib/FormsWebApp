@@ -10,7 +10,16 @@ namespace FormsWebApplication.Interface
         Task<List<Template>> GetLatestTemplatesAsync(int skip, int take);
 
         Task<bool> SubmitResponseAsync(Answer answer, string userId);
-        //Task<Template?> GetTemplateForResponseAsync(int templateId);
+
+        Task<bool> LikeTemplateAsync(int templateId, string userId);
+        Task<int> GetLikeCountAsync(int templateId);
+
+        Task<bool> AddCommentAsync(int templateId, string userId, string content);
+
+        Task<List<Comment>> GetCommentsAsync(int templateId);
+
+        Task<Template?> GetTemplateForEditAsync(int templateId);
+        Task<bool> UpdateTemplateAsync(int templateId, Template updatedTemplate, string userId);
     }
 
 }

@@ -1,0 +1,22 @@
+﻿@model List<Answer>
+
+<h2>Your Answers</h2>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Template</th>
+            <th>Submitted At</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var answer in Model)
+        {
+            <tr>
+                <td>@answer.Template.Title</td>
+                <td>@answer.SubmittedAt</td>
+                <td><a asp-action="Details" asp-route-id="@answer.Id">View</a></td>
+            </tr>
+        }
+    </tbody>
+</table>

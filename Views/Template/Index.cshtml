@@ -5,13 +5,14 @@
 
 <h2>My Templates</h2>
 
-<table class="table table-hover table-borderless">
+<table class="table table-hover table-striped">
     <thead>
         <tr>
             <th>Title</th>
             <th>Likes</th>
             <th>Comment</th>
             <th>Date Created</th>
+            <th>Answers</th>
         </tr>
     </thead>
     <tbody>
@@ -22,6 +23,7 @@
                 <td>@template.Likes.Count</td>
                 <td>@template.Comments.Count</td>
                 <td>@template.DateCreated.ToString("yyyy-MM-dd")</td>
+                <td><a asp-controller="Answer" asp-action="TemplateAnswers" asp-route-templateId="@template.Id" class="btn btn-primary">View Answers</a></td>
             </tr>
         }
     </tbody>

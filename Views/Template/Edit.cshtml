@@ -9,19 +9,13 @@
 <hr />
 <div class="row">
     <div class="col-md-8">
-        <form asp-action="Edit">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <input type="hidden" asp-for="Id" />
+        <form asp-action="Edit" method="post">
+            <input type="hidden" name="Id" value="@Model.Id" />
+            <input type="hidden" name="AuthorId" value="@Model.AuthorId" />
 
             <div class="form-group">
-                <label asp-for="Title" class="control-label"></label>
-                <input asp-for="Title" class="form-control" />
-                <span asp-validation-for="Title" class="text-danger"></span>
-            </div>
-
-            <div class="form-group">
-                <label asp-for="Author" class="control-label"></label>
-                <input asp-for="Author" class="form-control" readonly />
+                <label asp-for="Title">Title</label>
+                <input asp-for="Title" class="form-control" required />
             </div>
 
             <hr />
@@ -29,58 +23,63 @@
 
             @for (int i = 1; i <= 4; i++)
             {
-                <div class="form-group">
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" asp-for="@(Model.GetType().GetProperty($"CustomString{i}State").GetValue(Model))" />
-                        <label class="form-check-label">Enable Text Question @i</label>
+                var stringState = $"CustomString{i}State";
+                var stringQuestion = $"CustomString{i}Question";
+                var multiLineState = $"CustomMultiLine{i}State";
+                var multiLineQuestion = $"CustomMultiLine{i}Question";
+                var intState = $"CustomInt{i}State";
+                var intQuestion = $"CustomInt{i}Question";
+                var checkboxState = $"CustomCheckbox{i}State";
+                var checkboxQuestion = $"CustomCheckbox{i}Question";
+
+                bool stringStateValue = (bool?)Model.GetType().GetProperty(stringState)?.GetValue(Model, null) ?? false;
+                string stringQuestionValue = Model.GetType().GetProperty(stringQuestion)?.GetValue(Model, null) as string ?? "";
+
+                bool multiLineStateValue = (bool?)Model.GetType().GetProperty(multiLineState)?.GetValue(Model, null) ?? false;
+                string multiLineQuestionValue = Model.GetType().GetProperty(multiLineQuestion)?.GetValue(Model, null) as string ?? "";
+
+                bool intStateValue = (bool?)Model.GetType().GetProperty(intState)?.GetValue(Model, null) ?? false;
+                string intQuestionValue = Model.GetType().GetProperty(intQuestion)?.GetValue(Model, null) as string ?? "";
+
+                bool checkboxStateValue = (bool?)Model.GetType().GetProperty(checkboxState)?.GetValue(Model, null) ?? false;
+                string checkboxQuestionValue = Model.GetType().GetProperty(checkboxQuestion)?.GetValue(Model, null) as string ?? "";
+
+                @if (stringStateValue)
+                {
+                    <div class="mb-3">
+                        <label>@stringQuestionValue</label>
+                        <input type="text" name="@stringQuestion" class="form-control" value="@stringQuestionValue" />
                     </div>
-                    <input asp-for="@(Model.GetType().GetProperty($"CustomString{i}Question").GetValue(Model))" class="form-control" placeholder="Enter question text" />
-                </div>
+                }
+
+                @if (multiLineStateValue)
+                {
+                    <div class="mb-3">
+                        <label>@multiLineQuestionValue</label>
+                        <textarea name="@multiLineQuestion" class="form-control">@multiLineQuestionValue</textarea>
+                    </div>
+                }
+
+                @if (intStateValue)
+                {
+                    <div class="mb-3">
+                        <label>@intQuestionValue</label>
+                        <input type="number" name="@intQuestion" class="form-control" value="@intQuestionValue" />
+                    </div>
+                }
+
+                @if (checkboxStateValue)
+                {
+                    <div class="mb-3 form-check">
+                        <input type="hidden" name="@checkboxState" value="false" />
+                        <input type="checkbox" name="@checkboxState" value="true" class="form-check-input" @(checkboxStateValue ? "checked" : "") disabled />
+                        <label class="form-check-label">@checkboxQuestionValue</label>
+                    </div>
+                }
             }
 
-            @for (int i = 1; i <= 4; i++)
-            {
-                <div class="form-group">
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" asp-for="@(Model.GetType().GetProperty($"CustomMultiLine{i}State").GetValue(Model))" />
-                        <label class="form-check-label">Enable Multi-line Question @i</label>
-                    </div>
-                    <textarea asp-for="@(Model.GetType().GetProperty($"CustomMultiLine{i}Question").GetValue(Model))" class="form-control" placeholder="Enter question text"></textarea>
-                </div>
-            }
-
-            @for (int i = 1; i <= 4; i++)
-            {
-                <div class="form-group">
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" asp-for="@(Model.GetType().GetProperty($"CustomInt{i}State").GetValue(Model))" />
-                        <label class="form-check-label">Enable Numeric Question @i</label>
-                    </div>
-                    <input asp-for="@(Model.GetType().GetProperty($"CustomInt{i}Question").GetValue(Model))" class="form-control" type="number" placeholder="Enter a number" />
-                </div>
-            }
-
-            @for (int i = 1; i <= 4; i++)
-            {
-                <div class="form-group">
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" asp-for="@(Model.GetType().GetProperty($"CustomCheckbox{i}State").GetValue(Model))" />
-                        <label class="form-check-label">Enable Checkbox Question @i</label>
-                    </div>
-                    <input asp-for="@(Model.GetType().GetProperty($"CustomCheckbox{i}Question").GetValue(Model))" class="form-control" placeholder="Enter question text" />
-                </div>
-            }
-
-            <div class="form-group mt-3">
-                <button type="submit" class="btn btn-primary">Save Changes</button>
-                <a asp-action="Index" class="btn btn-secondary">Back to List</a>
-            </div>
+            <button type="submit" class="btn btn-primary">Save</button>
+            <a asp-action="Index" class="btn btn-secondary">Cancel</a>
         </form>
     </div>
 </div>
-
-@section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
-}

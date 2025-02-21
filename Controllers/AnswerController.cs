@@ -1,83 +1,95 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using FormsWebApplication.Interface;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using FormsWebApplication.Models;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace FormsWebApplication.Controllers
 {
+    [Authorize]
     public class AnswerController : Controller
     {
-        // GET: AnswerController
-        public ActionResult Index()
+        private readonly IAnswerService _answerService;
+        private readonly UserManager<ApplicationUser> _userManager;
+
+        public AnswerController(IAnswerService answerService, UserManager<ApplicationUser> userManager)
         {
-            return View();
+            _answerService = answerService;
+            _userManager = userManager;
         }
 
-        // GET: AnswerController/Details/5
-        public ActionResult Details(int id)
+        // Helper function to get the current user ID and admin status
+        private async Task<(string userId, bool isAdmin)> GetCurrentUserInfo()
         {
-            return View();
+            var user = await _userManager.GetUserAsync(User);
+            bool isAdmin = await _userManager.IsInRoleAsync(user, "Admin");
+            return (user.Id, isAdmin);
         }
 
-        // GET: AnswerController/Create
-        public ActionResult Create()
+        // GET: User's submitted answers
+        public async Task<IActionResult> Index()
         {
-            return View();
+            var (userId, _) = await GetCurrentUserInfo();
+            var answers = await _answerService.GetUserAnswersAsync(userId);
+            return View(answers);
         }
 
-        // POST: AnswerController/Create
+        // GET: Answers for a specific template (only visible to author or admin)
+        public async Task<IActionResult> TemplateAnswers(int templateId)
+        {
+            var (userId, isAdmin) = await GetCurrentUserInfo();
+            var answers = await _answerService.GetAnswerByTemplateIdAsync(templateId, userId, isAdmin);
+
+            return View("TemplateAnswers", answers);
+        }
+
+        // GET: Answer Details
+        public async Task<IActionResult> Details(int id)
+        {
+            var (userId, isAdmin) = await GetCurrentUserInfo();
+            var answer = await _answerService.GetTemplateAnswersAsync(id, userId, isAdmin);
+
+            if (answer == null)
+                return Forbid();
+
+            return View(answer);
+        }
+
+
+        // POST: Delete Answer
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create(IFormCollection collection)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            try
-            {
-                return RedirectToAction(nameof(Index));
-            }
-            catch
-            {
-                return View();
-            }
+            var (userId, isAdmin) = await GetCurrentUserInfo();
+ 
+            var success = await _answerService.DeleteAnswerAsync(id, userId, isAdmin);
+
+            if (!success)
+                return Forbid();
+
+            return RedirectToAction("Index", "Answer");
+
         }
 
-        // GET: AnswerController/Edit/5
-        public ActionResult Edit(int id)
+        public async Task<IActionResult> Average(int templateId)
         {
-            return View();
-        }
+            var (userId, isAdmin) = await GetCurrentUserInfo();
+            var intAnswers = await _answerService.GetCustomIntAnswersAsync(templateId, userId, isAdmin);
 
-        // POST: AnswerController/Edit/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Edit(int id, IFormCollection collection)
-        {
-            try
+            if (intAnswers == null)
             {
-                return RedirectToAction(nameof(Index));
+                return Forbid();
             }
-            catch
-            {
-                return View();
-            }
-        }
 
-        // GET: AnswerController/Delete/5
-        public ActionResult Delete(int id)
-        {
-            return View();
-        }
+            var averages = intAnswers
+                .Where(kv => kv.Value.Any())
+                .ToDictionary(kv => kv.Key, kv => _answerService.CalculateAverage(kv.Value));
 
-        // POST: AnswerController/Delete/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Delete(int id, IFormCollection collection)
-        {
-            try
-            {
-                return RedirectToAction(nameof(Index));
-            }
-            catch
-            {
-                return View();
-            }
+            return View(averages);
         }
     }
 }

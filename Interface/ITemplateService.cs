@@ -20,6 +20,8 @@ namespace FormsWebApplication.Interface
 
         Task<Template?> GetTemplateForEditAsync(int templateId);
         Task<bool> UpdateTemplateAsync(int templateId, Template updatedTemplate, string userId);
+
+        Task<bool> DeleteTemplateAsync(int templateId);
     }
 
 }

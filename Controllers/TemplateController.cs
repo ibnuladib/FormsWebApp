@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace FormsWebApplication.Controllers
 {
@@ -12,11 +13,13 @@ namespace FormsWebApplication.Controllers
     {
         private readonly ITemplateService _templateService;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly ILogger<TemplateController> _logger;
 
-        public TemplateController(ITemplateService templateService, UserManager<ApplicationUser> userManager)
+        public TemplateController(ITemplateService templateService, UserManager<ApplicationUser> userManager, ILogger<TemplateController> logger)
         {
             _templateService = templateService ?? throw new ArgumentNullException(nameof(templateService));
             _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
+            _logger = logger;
         }
 
 
@@ -26,7 +29,7 @@ namespace FormsWebApplication.Controllers
             var userId = _userManager.GetUserId(User);
             if (string.IsNullOrEmpty(userId))
             {
-                return Unauthorized(); 
+                return Unauthorized();
             }
 
             var templates = await _templateService.GetUserTemplatesAsync(userId);
@@ -47,6 +50,7 @@ namespace FormsWebApplication.Controllers
             }
         }
 
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> SubmitResponse(Answer model)
         {
@@ -71,10 +75,18 @@ namespace FormsWebApplication.Controllers
 
 
         // GET: TemplateController/Details/5
-        public ActionResult Details(int id)
+        public async Task<IActionResult> Details(int id)
         {
-            return View();
+            var template = await _templateService.GetTemplateByIdAsync(id);
+
+            if (template == null)
+            {
+                return NotFound();
+            }
+
+            return View(template);
         }
+
 
         // GET: TemplateController/Create
         public ActionResult Create()
@@ -87,7 +99,7 @@ namespace FormsWebApplication.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> Create([FromForm] Template template)
         {
-            string? userId = _userManager.GetUserId(User);            
+            string? userId = _userManager.GetUserId(User);
             if (string.IsNullOrEmpty(userId))
             {
                 return Unauthorized();
@@ -122,32 +134,30 @@ namespace FormsWebApplication.Controllers
             string? userId = _userManager?.GetUserId(User);
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
+            var existingTemplate = await _templateService.GetTemplateForEditAsync(id);
+            if (existingTemplate == null) return NotFound();
+
+            updatedTemplate.AuthorId = userId;
+            updatedTemplate.Author = existingTemplate.Author;
+            _logger.LogInformation("Updated Template Data: {@updatedTemplate}", updatedTemplate);
+
             bool success = await _templateService.UpdateTemplateAsync(id, updatedTemplate, userId);
-            if (!success) { return BadRequest("Could not update Template"); }
+            if (!success) return BadRequest("Could not update Template");
 
-            return View(updatedTemplate);
+            return RedirectToAction("Details", new { id });
         }
 
-        // GET: TemplateController/Delete/5
-        public ActionResult Delete(int id)
-        {
-            return View();
-        }
-
-        // POST: TemplateController/Delete/5
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Delete(int id, IFormCollection collection)
+        public async Task<IActionResult> Delete(int id)
         {
-            try
-            {
-                return RedirectToAction(nameof(Index));
-            }
-            catch
-            {
-                return View();
-            }
+            bool success = await _templateService.DeleteTemplateAsync(id);
+
+            if (!success)
+                return NotFound();
+
+            return RedirectToAction("Index");
         }
+
 
         [HttpPost]
         [Route("Template/Like/{templateId}")]
@@ -179,7 +189,7 @@ namespace FormsWebApplication.Controllers
         public async Task<IActionResult> GetComments(int templateId)
         {
             var comments = await _templateService.GetCommentsAsync(templateId);
-            return Ok(comments.Select( c => new
+            return Ok(comments.Select(c => new
             {
                 c.Id,
                 c.Content,
@@ -189,3 +199,4 @@ namespace FormsWebApplication.Controllers
         }
     }
 }
+

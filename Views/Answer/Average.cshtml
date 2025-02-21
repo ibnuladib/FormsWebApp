@@ -1,0 +1,23 @@
+﻿@model Dictionary<string, double>
+
+<h2>Average Custom Int Answers</h2>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Question</th>
+            <th>Average Answer</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var entry in Model)
+        {
+            <tr>
+                <td>@entry.Key</td>
+                <td>@entry.Value</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<a asp-action="Index" asp-controller="Answer" class="btn btn-secondary">Back to List</a>

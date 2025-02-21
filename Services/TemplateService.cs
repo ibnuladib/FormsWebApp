@@ -1,4 +1,5 @@
-﻿using FormsWebApplication.Data;
+﻿using System.Drawing.Text;
+using FormsWebApplication.Data;
 using FormsWebApplication.Interface;
 using FormsWebApplication.Models;
 using Microsoft.AspNetCore.Identity;
@@ -30,6 +31,8 @@ namespace FormsWebApplication.Services
         {
             return await _context.Templates
                 .Where(t => t.AuthorId == userId)
+                .Include(t => t.Likes)
+                .Include(t => t.Comments)
                 .OrderByDescending(t => t.DateCreated)
                 .AsNoTracking()
                 .ToListAsync();
@@ -68,11 +71,9 @@ namespace FormsWebApplication.Services
         {
             if (answer == null) return false;
 
-            // Assign metadata
             answer.UserId = userId;
             answer.SubmittedAt = DateTime.UtcNow;
 
-            // Fetch the template
             var template = await _context.Templates.FindAsync(answer.TemplateId);
             if (template == null)
             {
@@ -81,7 +82,6 @@ namespace FormsWebApplication.Services
             }
             answer.Template = template;
 
-            // Ensure answers are stored correctly
             answer.CustomString1State = !string.IsNullOrWhiteSpace(answer.CustomString1Answer);
             answer.CustomString2State = !string.IsNullOrWhiteSpace(answer.CustomString2Answer);
             answer.CustomString3State = !string.IsNullOrWhiteSpace(answer.CustomString3Answer);
@@ -134,8 +134,6 @@ namespace FormsWebApplication.Services
         }
 
 
-
-
         public async Task<int> GetLikeCountAsync(int templateId)
         {
             return await _context.Likes.Where(l => l.TemplateId == templateId).CountAsync();
@@ -145,7 +143,6 @@ namespace FormsWebApplication.Services
         {
             var template = await _context.Templates.FindAsync(templateId);
             var user = await _context.Users.FindAsync(userId);
-
             return (template, user);
         }
 
@@ -171,109 +168,122 @@ namespace FormsWebApplication.Services
         {
             return await _context.Comments
                 .Where( c=> c.TemplateId == templateId)
-                .OrderByDescending( c => c.Date)
+                .OrderBy( c => c.Date)
                 .Include(c => c.User)
                 .ToListAsync();
         }
 
-        async Task<Template?> ITemplateService.GetTemplateForEditAsync(int templateId)
+        public async Task<Template?> GetTemplateForEditAsync(int templateId)
         {
             return await _context.Templates
-                .Where(t => t.Id == templateId)
-                .Select(t => new Template
-                {
-                    Id = t.Id,
-                    Title = t.Title,
-                    Author = t.Author,
-                    AuthorId = t.AuthorId,
-                    CustomString1State = t.CustomString1State,
-                    CustomString1Question = t.CustomString1Question,
-                    CustomString2State = t.CustomString2State,
-                    CustomString2Question = t.CustomString2Question,
-                    CustomString3State = t.CustomString3State,
-                    CustomString3Question = t.CustomString3Question,
-                    CustomString4State = t.CustomString4State,
-                    CustomString4Question = t.CustomString4Question,
+                .FirstOrDefaultAsync(t => t.Id == templateId);
 
-                    CustomMultiLine1State = t.CustomMultiLine1State,
-                    CustomMultiLine1Question = t.CustomMultiLine1Question,
-                    CustomMultiLine2State = t.CustomMultiLine2State,
-                    CustomMultiLine2Question = t.CustomMultiLine2Question,
-                    CustomMultiLine3State = t.CustomMultiLine3State,
-                    CustomMultiLine3Question = t.CustomMultiLine3Question,
-                    CustomMultiLine4State = t.CustomMultiLine4State,
-                    CustomMultiLine4Question = t.CustomMultiLine4Question,
-
-                    CustomInt1State = t.CustomInt1State,
-                    CustomInt1Question = t.CustomInt1Question,
-                    CustomInt2State = t.CustomInt2State,
-                    CustomInt2Question = t.CustomInt2Question,
-                    CustomInt3State = t.CustomInt3State,
-                    CustomInt3Question = t.CustomInt3Question,
-                    CustomInt4State = t.CustomInt4State,
-                    CustomInt4Question = t.CustomInt4Question,
-
-                    CustomCheckbox1State = t.CustomCheckbox1State,
-                    CustomCheckbox1Question = t.CustomCheckbox1Question,
-                    CustomCheckbox2State = t.CustomCheckbox2State,
-                    CustomCheckbox2Question = t.CustomCheckbox2Question,
-                    CustomCheckbox3State = t.CustomCheckbox3State,
-                    CustomCheckbox3Question = t.CustomCheckbox3Question,
-                    CustomCheckbox4State = t.CustomCheckbox4State,
-                    CustomCheckbox4Question = t.CustomCheckbox4Question
-
-                })
-                .FirstOrDefaultAsync();
         }
-
-        async Task<bool> ITemplateService.UpdateTemplateAsync(int templateId, Template updatedTemplate, string userId)
+        public async Task<bool> UpdateTemplateAsync(int templateId, Template updatedTemplate, string userId)
         {
             var template = await _context.Templates.FirstOrDefaultAsync(t => t.Id == templateId && t.AuthorId == userId);
+            if (template == null)
+            {
+                Console.WriteLine($"Template with ID {templateId} and AuthorID {userId} not found.");
+                return false;
+            }
+            template.Title = updatedTemplate.Title ?? template.Title;
+            template.Title = updatedTemplate.Title ?? template.Title;
 
-            if(template == null) return false;
+            // Custom String Fields
+            template.CustomString1State = template.CustomString1State || updatedTemplate.CustomString1State;
+            template.CustomString1Question = updatedTemplate.CustomString1Question ?? template.CustomString1Question;
 
-            template.Title = updatedTemplate.Title;
-            template.Author = updatedTemplate.Author;
-            template.AuthorId = updatedTemplate.AuthorId;
+            template.CustomString2State = template.CustomString2State || updatedTemplate.CustomString2State;
+            template.CustomString2Question = updatedTemplate.CustomString2Question ?? template.CustomString2Question;
 
-            template.CustomString1State = updatedTemplate.CustomString1State;
-            template.CustomString1Question = updatedTemplate.CustomString1Question;
-            template.CustomString2State = updatedTemplate.CustomString2State;
-            template.CustomString2Question = updatedTemplate.CustomString2Question;
-            template.CustomString3State = updatedTemplate.CustomString3State;
-            template.CustomString3Question = updatedTemplate.CustomString3Question;
-            template.CustomString4State = updatedTemplate.CustomString4State;
-            template.CustomString4Question = updatedTemplate.CustomString4Question;
+            template.CustomString3State = template.CustomString3State || updatedTemplate.CustomString3State;
+            template.CustomString3Question = updatedTemplate.CustomString3Question ?? template.CustomString3Question;
 
-            template.CustomMultiLine1State = updatedTemplate.CustomMultiLine1State;
-            template.CustomMultiLine1Question = updatedTemplate.CustomMultiLine1Question;
-            template.CustomMultiLine2State = updatedTemplate.CustomMultiLine2State;
-            template.CustomMultiLine2Question = updatedTemplate.CustomMultiLine2Question;
-            template.CustomMultiLine3State = updatedTemplate.CustomMultiLine3State;
-            template.CustomMultiLine3Question = updatedTemplate.CustomMultiLine3Question;
-            template.CustomMultiLine4State = updatedTemplate.CustomMultiLine4State;
-            template.CustomMultiLine4Question = updatedTemplate.CustomMultiLine4Question;
+            template.CustomString4State = template.CustomString4State || updatedTemplate.CustomString4State;
+            template.CustomString4Question = updatedTemplate.CustomString4Question ?? template.CustomString4Question;
 
-            template.CustomInt1State = updatedTemplate.CustomInt1State;
-            template.CustomInt1Question = updatedTemplate.CustomInt1Question;
-            template.CustomInt2State = updatedTemplate.CustomInt2State;
-            template.CustomInt2Question = updatedTemplate.CustomInt2Question;
-            template.CustomInt3State = updatedTemplate.CustomInt3State;
-            template.CustomInt3Question = updatedTemplate.CustomInt3Question;
-            template.CustomInt4State = updatedTemplate.CustomInt4State;
-            template.CustomInt4Question = updatedTemplate.CustomInt4Question;
+            // Custom Multi-line Fields
+            template.CustomMultiLine1State = template.CustomMultiLine1State || updatedTemplate.CustomMultiLine1State;
+            template.CustomMultiLine1Question = updatedTemplate.CustomMultiLine1Question ?? template.CustomMultiLine1Question;
 
-            template.CustomCheckbox1State = updatedTemplate.CustomCheckbox1State;
-            template.CustomCheckbox1Question = updatedTemplate.CustomCheckbox1Question;
-            template.CustomCheckbox2State = updatedTemplate.CustomCheckbox2State;
-            template.CustomCheckbox2Question = updatedTemplate.CustomCheckbox2Question;
-            template.CustomCheckbox3State = updatedTemplate.CustomCheckbox3State;
-            template.CustomCheckbox3Question = updatedTemplate.CustomCheckbox3Question;
-            template.CustomCheckbox4State = updatedTemplate.CustomCheckbox4State;
-            template.CustomCheckbox4Question = updatedTemplate.CustomCheckbox4Question;
+            template.CustomMultiLine2State = template.CustomMultiLine2State || updatedTemplate.CustomMultiLine2State;
+            template.CustomMultiLine2Question = updatedTemplate.CustomMultiLine2Question ?? template.CustomMultiLine2Question;
+
+            template.CustomMultiLine3State = template.CustomMultiLine3State || updatedTemplate.CustomMultiLine3State;
+            template.CustomMultiLine3Question = updatedTemplate.CustomMultiLine3Question ?? template.CustomMultiLine3Question;
+
+            template.CustomMultiLine4State = template.CustomMultiLine4State || updatedTemplate.CustomMultiLine4State;
+            template.CustomMultiLine4Question = updatedTemplate.CustomMultiLine4Question ?? template.CustomMultiLine4Question;
+
+            // Custom Integer Fields
+            template.CustomInt1State = template.CustomInt1State || updatedTemplate.CustomInt1State;
+            template.CustomInt1Question = updatedTemplate.CustomInt1Question ?? template.CustomInt1Question;
+
+            template.CustomInt2State = template.CustomInt2State || updatedTemplate.CustomInt2State;
+            template.CustomInt2Question = updatedTemplate.CustomInt2Question ?? template.CustomInt2Question;
+
+            template.CustomInt3State = template.CustomInt3State || updatedTemplate.CustomInt3State;
+            template.CustomInt3Question = updatedTemplate.CustomInt3Question ?? template.CustomInt3Question;
+
+            template.CustomInt4State = template.CustomInt4State || updatedTemplate.CustomInt4State;
+            template.CustomInt4Question = updatedTemplate.CustomInt4Question ?? template.CustomInt4Question;
+
+            // Custom Checkbox Fields
+            template.CustomCheckbox1State = template.CustomCheckbox1State || updatedTemplate.CustomCheckbox1State;
+            template.CustomCheckbox1Question = updatedTemplate.CustomCheckbox1Question ?? template.CustomCheckbox1Question;
+
+            template.CustomCheckbox2State = template.CustomCheckbox2State || updatedTemplate.CustomCheckbox2State;
+            template.CustomCheckbox2Question = updatedTemplate.CustomCheckbox2Question ?? template.CustomCheckbox2Question;
+
+            template.CustomCheckbox3State = template.CustomCheckbox3State || updatedTemplate.CustomCheckbox3State;
+            template.CustomCheckbox3Question = updatedTemplate.CustomCheckbox3Question ?? template.CustomCheckbox3Question;
+
+            template.CustomCheckbox4State = template.CustomCheckbox4State || updatedTemplate.CustomCheckbox4State;
+            template.CustomCheckbox4Question = updatedTemplate.CustomCheckbox4Question ?? template.CustomCheckbox4Question;
+
+
+            _context.Templates.Update(template);
+
+            try
+            {
+                await _context.SaveChangesAsync();
+                Console.WriteLine("Template successfully updated.");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error saving template: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<bool> DeleteTemplateAsync(int templateId)
+        {
+            var template = await _context.Templates
+                .Include(t => t.Likes)   
+                .Include(t => t.Comments)  
+                .Include(t => t.Author)  
+                .FirstOrDefaultAsync(t => t.Id == templateId);
+
+            if (template == null)
+                return false;
+
+            var answers = await _context.Answers
+                .Where(a => a.TemplateId == templateId)
+                .ToListAsync(); 
+
+            _context.Answers.RemoveRange(answers);
+            _context.Likes.RemoveRange(template.Likes);
+            _context.Comments.RemoveRange(template.Comments);
+
+            _context.Templates.Remove(template);
 
             await _context.SaveChangesAsync();
             return true;
         }
+
     }
+
 }
+

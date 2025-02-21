@@ -1,0 +1,22 @@
+﻿@model List<Answer>
+
+<h2></h2>
+<table class="table tabled-striped">
+    <thead>
+        <tr>
+            <th>User</th>
+            <th>Submitted At</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var answer in Model)
+        {
+            <tr>
+                <td>@answer.User.UserName</td>
+                <td>@answer.SubmittedAt</td>
+                <td><a asp-action="Details" asp-route-id="@answer.Id">View</a></td>
+            </tr>
+        }
+    </tbody>
+</table>

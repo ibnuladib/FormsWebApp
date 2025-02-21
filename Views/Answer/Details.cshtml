@@ -1,0 +1,63 @@
+﻿@functions {
+    public class AnswerField
+    {
+        public bool State { get; set; }
+        public string Question { get; set; }
+        public string Answer { get; set; }
+    }
+}
+@model Answer
+
+<h2>Answer Details</h2>
+<p><strong>Submitted By:</strong> @Model.User.UserName</p>
+<p><strong>Submitted At:</strong> @Model.SubmittedAt</p>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Question</th>
+            <th>Answer</th>
+        </tr>
+    </thead>
+    <tbody>
+        @{
+            var answerFields = new List<AnswerField>
+        {
+        new() { State = Model.CustomString1State, Question = "Custom String 1", Answer = Model.CustomString1Answer },
+        new() { State = Model.CustomString2State, Question = "Custom String 2", Answer = Model.CustomString2Answer },
+        new() { State = Model.CustomString3State, Question = "Custom String 3", Answer = Model.CustomString3Answer },
+        new() { State = Model.CustomString4State, Question = "Custom String 4", Answer = Model.CustomString4Answer },
+
+        new() { State = Model.CustomMultiLine1State, Question = "Custom Multi-Line 1", Answer = Model.CustomMultiLine1Answer },
+        new() { State = Model.CustomMultiLine2State, Question = "Custom Multi-Line 2", Answer = Model.CustomMultiLine2Answer },
+        new() { State = Model.CustomMultiLine3State, Question = "Custom Multi-Line 3", Answer = Model.CustomMultiLine3Answer },
+        new() { State = Model.CustomMultiLine4State, Question = "Custom Multi-Line 4", Answer = Model.CustomMultiLine4Answer },
+
+        new() { State = Model.CustomInt1State, Question = "Custom Int 1", Answer = Model.CustomInt1Answer?.ToString() },
+        new() { State = Model.CustomInt2State, Question = "Custom Int 2", Answer = Model.CustomInt2Answer?.ToString() },
+        new() { State = Model.CustomInt3State, Question = "Custom Int 3", Answer = Model.CustomInt3Answer?.ToString() },
+        new() { State = Model.CustomInt4State, Question = "Custom Int 4", Answer = Model.CustomInt4Answer?.ToString() },
+
+        new() { State = Model.CustomCheckbox1State, Question = "Custom Checkbox 1", Answer = Model.CustomCheckbox1Answer?.ToString() },
+        new() { State = Model.CustomCheckbox2State, Question = "Custom Checkbox 2", Answer = Model.CustomCheckbox2Answer?.ToString() },
+        new() { State = Model.CustomCheckbox3State, Question = "Custom Checkbox 3", Answer = Model.CustomCheckbox3Answer?.ToString() },
+        new() { State = Model.CustomCheckbox4State, Question = "Custom Checkbox 4", Answer = Model.CustomCheckbox4Answer?.ToString() }
+        };
+        }
+
+        @foreach (var item in answerFields.Where(a => a.State))
+        {
+            <tr>
+                <td>@item.Question</td>
+                <td>@item.Answer</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<a href="/Answer/Index" class="btn btn-secondary">Back to List</a>
+
+<form asp-action="DeleteConfirmed" method="post">
+    <input type="hidden" name="id" value="@Model.Id" />
+    <button type="submit" class="btn btn-danger">Delete</button>
+</form>

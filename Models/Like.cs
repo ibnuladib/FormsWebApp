@@ -10,10 +10,10 @@ namespace FormsWebApplication.Models
 
         [Required, ForeignKey("Template")]
         public int TemplateId { get; set; }
-        public Template Template { get; set; }
+        public required Template Template { get; set; }
 
         [Required, ForeignKey("ApplicationUser")]
         public string UserId { get; set; }
-        public ApplicationUser User { get; set; }
+        public required ApplicationUser User { get; set; }
     }
 }

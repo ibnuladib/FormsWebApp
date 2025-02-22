@@ -22,6 +22,8 @@ namespace FormsWebApplication.Interface
         Task<bool> UpdateTemplateAsync(int templateId, Template updatedTemplate, string userId);
 
         Task<bool> DeleteTemplateAsync(int templateId);
+        int GetAnswerCount(int templateId);
+
     }
 
 }

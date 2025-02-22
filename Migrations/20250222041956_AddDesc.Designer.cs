@@ -4,6 +4,7 @@ using FormsWebApplication.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FormsWebApplication.Migrations
 {
     [DbContext(typeof(FormsWebAppDbContext))]
-    partial class FormsWebAppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250222041956_AddDesc")]
+    partial class AddDesc
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -307,14 +310,14 @@ namespace FormsWebApplication.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("TName")
+                    b.Property<string>("TagName")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TName")
+                    b.HasIndex("TagName")
                         .IsUnique();
 
                     b.ToTable("Tags");

@@ -32,6 +32,7 @@ namespace FormsWebApplication.Services
                 .Where( a => a.TemplateId == templateId && (a.Template.AuthorId == userId || isAdmin))
                 .Include( a => a.User)
                 .Include(a => a.Template)
+                .OrderByDescending(a => a.SubmittedAt)
                 .ToListAsync();
         }
 
@@ -40,6 +41,7 @@ namespace FormsWebApplication.Services
             return await _context.Answers
                 .Where(a => a.UserId == userId)
                 .Include(a => a.Template)
+                .OrderByDescending( a => a.SubmittedAt)
                 .ToListAsync();
         }
         public async Task<bool> DeleteAnswerAsync(int id, string userId, bool isAdmin)

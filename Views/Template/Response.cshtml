@@ -2,7 +2,13 @@
 
 <div class="container">
     <h2>@Model.Title</h2>
-    <p>Tags: @string.Join(",", Model.TemplateTags.Select(t => t.Tag.TagName))</p>
+    <h3>Description: </h3>
+    @using Markdig
+    <div class="card-text">
+        @Html.Raw(Model.Description != null ? Markdown.ToHtml(Model.Description) : "")
+    </div>
+
+    <p>Tags: @string.Join(",", Model.TemplateTags.Select(t => t.Tag.TName))</p>
     <button id="likeButton" class="btn btn-primary" data-template-id="@Model.Id">
         👍 Like (<span id="likeCount">@Model.Likes.Count</span>)
     </button>

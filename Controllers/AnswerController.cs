@@ -20,7 +20,6 @@ namespace FormsWebApplication.Controllers
             _userManager = userManager;
         }
 
-        // Helper function to get the current user ID and admin status
         private async Task<(string userId, bool isAdmin)> GetCurrentUserInfo()
         {
             var user = await _userManager.GetUserAsync(User);
@@ -28,7 +27,6 @@ namespace FormsWebApplication.Controllers
             return (user.Id, isAdmin);
         }
 
-        // GET: User's submitted answers
         public async Task<IActionResult> Index()
         {
             var (userId, _) = await GetCurrentUserInfo();
@@ -36,7 +34,6 @@ namespace FormsWebApplication.Controllers
             return View(answers);
         }
 
-        // GET: Answers for a specific template (only visible to author or admin)
         public async Task<IActionResult> TemplateAnswers(int templateId)
         {
             var (userId, isAdmin) = await GetCurrentUserInfo();
@@ -45,7 +42,6 @@ namespace FormsWebApplication.Controllers
             return View("TemplateAnswers", answers);
         }
 
-        // GET: Answer Details
         public async Task<IActionResult> Details(int id)
         {
             var (userId, isAdmin) = await GetCurrentUserInfo();
@@ -57,8 +53,6 @@ namespace FormsWebApplication.Controllers
             return View(answer);
         }
 
-
-        // POST: Delete Answer
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin")]

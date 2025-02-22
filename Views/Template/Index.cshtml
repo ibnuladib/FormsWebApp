@@ -13,6 +13,7 @@
             <th>Comment</th>
             <th>Date Created</th>
             <th>Answers</th>
+            <th>Aggregation</th>
         </tr>
     </thead>
     <tbody>
@@ -24,6 +25,8 @@
                 <td>@template.Comments.Count</td>
                 <td>@template.DateCreated.ToString("yyyy-MM-dd")</td>
                 <td><a asp-controller="Answer" asp-action="TemplateAnswers" asp-route-templateId="@template.Id" class="btn btn-primary">View Answers</a></td>
+                <td><a asp-controller="Answer" asp-action="Average" asp-route-templateId="@template.Id" class="btn btn-primary">View Aggregation</a></td>
+
             </tr>
         }
     </tbody>

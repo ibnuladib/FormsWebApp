@@ -1,9 +1,25 @@
 ﻿@model Template
+<div class="col-md-4 mb-4">
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h5 class="card-title">@Model.Title</h5>
+            <p class="card-text text-muted">Author: @Model.Author.Email</p>
+            <p class="card-text text-muted">Created on @Model.DateCreated.ToShortDateString()</p>
 
-<div class="card my-3">
-    <div class="card-body">
-        <h5 class="card-title">@Model.Title</h5>
-        <p class="card-text text-muted">Created on @Model.DateCreated.ToShortDateString()</p>
-        <a href="/Template/Response/@Model.Id" class="btn btn-primary">View Template</a>
+            <div class="d-flex justify-content-between align-items-center">
+                <a href="/Template/Response/@Model.Id" class="btn btn-primary">View Template</a>
+                <div>
+                    <span class="me-3">
+                        <i class="fa-solid fa-heart text-danger"></i> @Model.Likes.Count()
+                    </span>
+                    <span class="me-3">
+                        <i class="fa-solid fa-comment text-primary"></i> @Model.Comments.Count()
+                    </span>
+                    <span>
+                        <i class="fa-solid fa-file-lines text-secondary"></i> @Model.AnswerCount
+                    </span>
+                </div>
+            </div>
+        </div>
     </div>
 </div>

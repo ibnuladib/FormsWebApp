@@ -3,6 +3,7 @@ using FormsWebApplication.Data;
 using FormsWebApplication.Interface;
 using FormsWebApplication.Models;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 
@@ -19,14 +20,29 @@ namespace FormsWebApplication.Services
             _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
 
         }
+
         public async Task<List<Template>> GetLatestTemplatesAsync(int skip, int take)
         {
             return await _context.Templates
-                .OrderByDescending(t => t.DateCreated) 
+                .OrderByDescending(t => t.DateCreated)
                 .Skip(skip)
                 .Take(take)
+                .Include(t => t.Likes)
+                .Include(t => t.Comments)
+                .Include(t => t.Author)
                 .ToListAsync();
         }
+
+
+        public int GetAnswerCount(int templateId)
+        {
+            return _context.Answers.Count(a => a.TemplateId == templateId);
+        }
+
+
+
+
+
         public async Task<List<Template>> GetUserTemplatesAsync(string userId)
         {
             return await _context.Templates
@@ -181,10 +197,12 @@ namespace FormsWebApplication.Services
         }
         public async Task<bool> UpdateTemplateAsync(int templateId, Template updatedTemplate, string userId)
         {
-            var template = await _context.Templates.FirstOrDefaultAsync(t => t.Id == templateId && t.AuthorId == userId);
-            if (template == null)
+            var template = await _context.Templates
+                .FirstOrDefaultAsync(t => t.Id == templateId);
+            bool isAdmin = await _userManager.IsInRoleAsync(await _userManager.FindByIdAsync(userId), "Admin");
+            if (template.AuthorId != userId && !isAdmin)
             {
-                Console.WriteLine($"Template with ID {templateId} and AuthorID {userId} not found.");
+                Console.WriteLine($"User {userId} is not authorized to update this template.");
                 return false;
             }
             template.Title = updatedTemplate.Title ?? template.Title;
@@ -229,20 +247,18 @@ namespace FormsWebApplication.Services
             template.CustomInt4State = template.CustomInt4State || updatedTemplate.CustomInt4State;
             template.CustomInt4Question = updatedTemplate.CustomInt4Question ?? template.CustomInt4Question;
 
-            // Custom Checkbox Fields
-            template.CustomCheckbox1State = template.CustomCheckbox1State || updatedTemplate.CustomCheckbox1State;
-            template.CustomCheckbox1Question = updatedTemplate.CustomCheckbox1Question ?? template.CustomCheckbox1Question;
+            //// Custom Checkbox Fields
+            //template.CustomCheckbox1State = template.CustomCheckbox1State || updatedTemplate.CustomCheckbox1State;
+            //template.CustomCheckbox1Question = updatedTemplate.CustomCheckbox1Question ?? template.CustomCheckbox1Question;
 
-            template.CustomCheckbox2State = template.CustomCheckbox2State || updatedTemplate.CustomCheckbox2State;
-            template.CustomCheckbox2Question = updatedTemplate.CustomCheckbox2Question ?? template.CustomCheckbox2Question;
+            //template.CustomCheckbox2State = template.CustomCheckbox2State || updatedTemplate.CustomCheckbox2State;
+            //template.CustomCheckbox2Question = updatedTemplate.CustomCheckbox2Question ?? template.CustomCheckbox2Question;
 
-            template.CustomCheckbox3State = template.CustomCheckbox3State || updatedTemplate.CustomCheckbox3State;
-            template.CustomCheckbox3Question = updatedTemplate.CustomCheckbox3Question ?? template.CustomCheckbox3Question;
+            //template.CustomCheckbox3State = template.CustomCheckbox3State || updatedTemplate.CustomCheckbox3State;
+            //template.CustomCheckbox3Question = updatedTemplate.CustomCheckbox3Question ?? template.CustomCheckbox3Question;
 
-            template.CustomCheckbox4State = template.CustomCheckbox4State || updatedTemplate.CustomCheckbox4State;
-            template.CustomCheckbox4Question = updatedTemplate.CustomCheckbox4Question ?? template.CustomCheckbox4Question;
-
-
+            //template.CustomCheckbox4State = template.CustomCheckbox4State || updatedTemplate.CustomCheckbox4State;
+            //template.CustomCheckbox4Question = updatedTemplate.CustomCheckbox4Question ?? template.CustomCheckbox4Question;
             _context.Templates.Update(template);
 
             try

@@ -35,7 +35,7 @@ namespace FormsWebApplication.Services
             var user = await _userManager.FindByIdAsync(userId);
             if (user == null) return false;
 
-            user.LockoutEnd = DateTimeOffset.MaxValue;  // Indefinite block
+            user.LockoutEnd = DateTimeOffset.UtcNow.AddYears(100); // Block indefinitely
             await _userManager.UpdateAsync(user);
             return true;
         }
@@ -45,10 +45,11 @@ namespace FormsWebApplication.Services
             var user = await _userManager.FindByIdAsync(userId);
             if (user == null) return false;
 
-            user.LockoutEnd = null;
+            user.LockoutEnd = null; // Unblock user
             await _userManager.UpdateAsync(user);
             return true;
         }
+
 
         public async Task<bool> DeleteUserAsync(string userId)
         {
@@ -63,7 +64,10 @@ namespace FormsWebApplication.Services
         {
             var user = await _userManager.FindByIdAsync(userId);
             if (user == null) return false;
-
+            if (await _userManager.IsInRoleAsync(user, "User"))
+            {
+                await _userManager.RemoveFromRoleAsync(user, "User");
+            }
             await _userManager.AddToRoleAsync(user, "Admin");
             return true;
         }
@@ -75,6 +79,21 @@ namespace FormsWebApplication.Services
 
             await _userManager.RemoveFromRoleAsync(user, "Admin");
             return true;
+        }
+
+
+        public async Task<Dictionary<string, List<string>>> GetUserRolesAsync()
+        {
+            var users = _userManager.Users.ToList();
+            var userRoles = new Dictionary<string, List<string>>();
+
+            foreach (var user in users)
+            {
+                var roles = await _userManager.GetRolesAsync(user);
+                userRoles[user.Id] = roles.ToList();
+            }
+
+            return userRoles;
         }
     }
 

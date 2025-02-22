@@ -11,10 +11,10 @@
 		<input asp-for="Title" class="form-control" required/>
 		<span asp-validation-for="Title" class="text-danger"></span>
 	</div>
-	@* <div class="form-group"> *@
-	@* 	<label asp-for="Description">Description</label> *@
-	@* 	<textarea asp-for="Description" class="form-control" rows="3"></textarea> *@
-	@* </div> *@
+    <div class="mb-3">
+        <label for="description" class="form-label">Description</label>
+        <textarea id="description" name="Description" class="form-control"></textarea>
+    </div>
 
 	@* <div class="form-group"> *@
 	@* 	<label>Tags</label> *@
@@ -30,28 +30,10 @@
 </form>
 
 <script>
-    // document.getElementById("tagsInput").addEventListener("input", function() {
-    //     let query = this.value;
-    //     if (query.length > 0) {
-    //         fetch(`/Tag/Search?query=${query}`)
-    //             .then(response => response.json())
-    //             .then(data => {
-    //                 let dropdown = document.getElementById("tagsDropdown");
-    //                 dropdown.innerHTML = "";
-    //                 data.forEach(tag => {
-    //                     let option = document.createElement("div");
-    //                     option.classList.add("dropdown-item");
-    //                     option.textContent = tag;
-    //                     option.addEventListener("click", function() {
-    //                         document.getElementById("tagsInput").value = tag;
-    //                         dropdown.innerHTML = "";
-    //                     });
-    //                     dropdown.appendChild(option);
-    //                 });
-    //                 dropdown.style.display = "block";
-    //             });
-    //     }
-    // });
+    new EasyMDE({ element: document.getElementById("description") });
+</script>
+
+<script>
     let questionCounts = {
         "CustomString": 0,
         "CustomMultiLine": 0,
@@ -72,7 +54,6 @@
         let questionDiv = document.createElement("div");
         questionDiv.classList.add("form-group", "mb-3");
 
-        // Dropdown to select question type
         let select = document.createElement("select");
         select.classList.add("form-control", "mb-2");
         for (let key in questionTypes) {
@@ -137,7 +118,6 @@
             stateField.value = inputField.value ? "true" : "false";
         });
 
-        // Initialize field names when first added
         updateFieldNames(select.value);
 
         questionDiv.appendChild(select);

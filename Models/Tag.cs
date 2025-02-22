@@ -10,7 +10,7 @@ namespace FormsWebApplication.Models
         public int Id { get; set; }
 
         [Required, MaxLength(100)]
-        public string TagName { get; set; }
+        public string TName { get; set; }
         public ICollection<TemplateTag> TemplateTags { get; set; } = new List<TemplateTag>();
     }
 }

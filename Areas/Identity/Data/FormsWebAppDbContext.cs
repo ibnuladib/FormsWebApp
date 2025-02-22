@@ -94,7 +94,7 @@ public class FormsWebAppDbContext : IdentityDbContext<ApplicationUser>
 
         // Tag Unique Constraint (Ensure tags have unique names)
         builder.Entity<Tag>()
-            .HasIndex(t => t.TagName)
+            .HasIndex(t => t.TName)
             .IsUnique();
     }
 

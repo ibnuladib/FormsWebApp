@@ -18,6 +18,8 @@ namespace FormsWebApplication.Models
         [Required]
         public required ApplicationUser Author { get; set; }
 
+        public string? Description { get; set; }
+
         public ICollection<TemplateTag> TemplateTags { get; set; } = new List<TemplateTag>();
 
         public DateTime DateCreated { get; set; } = DateTime.UtcNow;
@@ -76,5 +78,8 @@ namespace FormsWebApplication.Models
 
         public ICollection<Comment> Comments { get; set; } = new List<Comment>();
         public ICollection<Like> Likes { get; set; } = new List<Like>();
+        [NotMapped]
+        public int AnswerCount { get; set; }
+
     }
 }

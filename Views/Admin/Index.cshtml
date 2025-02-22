@@ -4,6 +4,7 @@
 
 @{
     ViewData["Title"] = "User Management";
+    var userRoles = ViewBag.UserRoles as Dictionary<string, List<string>>;
 }
 
 <h2>User Management</h2>
@@ -15,32 +16,58 @@
             <th>Email</th>
             <th>First Name</th>
             <th>Last Name</th>
-            @* <th>Created At</th> *@
+            <th>Roles</th>
+            <th>Account Status</th>  @* NEW COLUMN *@
             <th>Actions</th>
         </tr>
     </thead>
     <tbody>
         @foreach (var user in Model)
         {
-            var roles = await UserManager.GetRolesAsync(user);
-            bool isAdmin = roles.Contains("Admin");
+            bool isBlocked = user.LockoutEnd.HasValue && user.LockoutEnd > DateTime.UtcNow;
 
             <tr>
                 <td>@user.UserName</td>
                 <td>@user.Email</td>
                 <td>@user.FirstName</td>
                 <td>@user.LastName</td>
-                @* <td>@user.CreatedAt.ToShortDateString()</td> *@
+                <td>
+                    @if (userRoles != null && userRoles.ContainsKey(user.Id))
+                    {
+                        <span>@string.Join(", ", userRoles[user.Id])</span>
+                    }
+                    else
+                    {
+                        <span>No Roles</span>
+                    }
+                </td>
+                <td>
+                    @if (isBlocked)
+                    {
+                        <span class="text-danger">Blocked</span>
+                    }
+                    else
+                    {
+                        <span class="text-success"></span>  @* Empty if not blocked *@
+                    }
+                </td>
                 <td>
                     <div class="dropdown">
                         <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
                             Actions
                         </button>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item text-danger" asp-action="BlockUser" asp-route-id="@user.Id">Block</a></li>
-                            <li><a class="dropdown-item text-danger" asp-action="DeleteUser" asp-route-id="@user.Id">Delete</a></li>
+                            @if (isBlocked)
+                            {
+                                <li><a class="dropdown-item text-success" asp-action="Unblock" asp-route-id="@user.Id">Unblock</a></li>
+                            }
+                            else
+                            {
+                                <li><a class="dropdown-item text-danger" asp-action="Block" asp-route-id="@user.Id">Block</a></li>
+                            }
+                            <li><a class="dropdown-item text-danger" asp-action="Delete" asp-route-id="@user.Id">Delete</a></li>
 
-                            @if (!isAdmin)
+                            @if (!userRoles[user.Id].Contains("Admin"))
                             {
                                 <li><a class="dropdown-item text-success" asp-action="PromoteToAdmin" asp-route-id="@user.Id">Make Admin</a></li>
                             }
@@ -49,6 +76,5 @@
                 </td>
             </tr>
         }
-
     </tbody>
 </table>

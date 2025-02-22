@@ -2,42 +2,46 @@
     ViewData["Title"] = "Home Page";
 }
 
-<div id="templateContainer">
-    @foreach(var template in Model)
-    {
-        <partial name="_TemplateCardPartial" model="template"/>
-    }
+<div class="container mt-3">
+    <div class="row row-cols-1 row-cols-md-3 g-4" id="templateContainer">
+        @foreach (var template in Model)
+        {
+            <partial name="_TemplateCardPartial" model="template" />
+        }
+    </div>
 </div>
 
-<div id="loading" style="display; none;" >
+<div id="loading" class="text-center my-3" style="display: none;">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
 </div>
 
 <script>
-    let page  = 1;
+    let page = 1;
     let isLoading = false;
-    
-    window.addEventListener("scroll", async function(){
-        if(isLoading) return;
 
-        let scrollPosition = window.innerHeight + weight.scrolly;
-        
+    window.addEventListener("scroll", async function () {
+        if (isLoading) return;
+
+        let scrollPosition = window.innerHeight + window.scrollY;
         let documentHeight = document.body.offsetHeight;
 
-        if(scrollPosition >= documentHeight -200){
+        if (scrollPosition >= documentHeight - 200) {
             isLoading = true;
             document.getElementById("loading").style.display = "block";
 
-            try{
-                let response = await fetch("/Home/LoadMoreTemplates?page=${page}");
-                if(response.ok){
+            try {
+                let response = await fetch(`/Home/LoadMoreTemplates?page=${page}`);
+                if (response.ok) {
                     let html = await response.text();
-                    document.getElementById("templateContainer").insertAdjacentHTML("beforeend",html);
+                    document.getElementById("templateContainer").insertAdjacentHTML("beforeend", html);
                     page++;
                 }
+            } catch (error) {
+                console.error("Error loading templates:", error);
             }
-            catch(error){
-                console.error("Error Loading templates:", error;
-            }
+
             document.getElementById("loading").style.display = "none";
             isLoading = false;
         }

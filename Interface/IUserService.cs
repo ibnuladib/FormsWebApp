@@ -13,6 +13,7 @@ namespace FormsWebApplication.Interface
         Task<bool> DeleteUserAsync(string userId);
         Task<bool> PromoteToAdminAsync(string userId);
         Task<bool> RemoveAdminAccessAsync(string userId);
+        Task<Dictionary<string, List<string>>> GetUserRolesAsync();
     }
 }
 

@@ -1,6 +1,7 @@
 ﻿using System.Security.Claims;
 using FormsWebApplication.Interface;
 using FormsWebApplication.Models;
+using FormsWebApplication.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -14,12 +15,14 @@ namespace FormsWebApplication.Controllers
         private readonly ITemplateService _templateService;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ILogger<TemplateController> _logger;
+        private readonly LuceneSearchService _luceneSearchService;
 
-        public TemplateController(ITemplateService templateService, UserManager<ApplicationUser> userManager, ILogger<TemplateController> logger)
+        public TemplateController(ITemplateService templateService, UserManager<ApplicationUser> userManager, ILogger<TemplateController> logger, LuceneSearchService luceneSearchService)
         {
             _templateService = templateService ?? throw new ArgumentNullException(nameof(templateService));
             _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
             _logger = logger;
+            _luceneSearchService = luceneSearchService;
         }
 
 
@@ -105,7 +108,9 @@ namespace FormsWebApplication.Controllers
                 return Unauthorized();
             }
             int templateId = await _templateService.CreateTemplateAsync(template, userId);
-            return CreatedAtAction(nameof(GetTemplateById), new { id = templateId }, template);
+            _luceneSearchService.IndexTemplates(new List<Template> { template });
+          // return CreatedAtAction(nameof(GetTemplateById), new { id = templateId }, template);
+            return RedirectToAction("Details", new { id = templateId });
         }
 
 
@@ -143,19 +148,21 @@ namespace FormsWebApplication.Controllers
 
             bool success = await _templateService.UpdateTemplateAsync(id, updatedTemplate, userId);
             if (!success) return BadRequest("Could not update Template");
-
+            _luceneSearchService.IndexTemplates(new List<Template> { existingTemplate });
             return RedirectToAction("Details", new { id });
         }
 
         [HttpPost]
         public async Task<IActionResult> Delete(int id)
         {
+            var template = await _templateService.GetTemplateByIdAsync(id);
             bool success = await _templateService.DeleteTemplateAsync(id);
 
             if (!success)
                 return NotFound();
-
-            return RedirectToAction("Index");
+            if (template == null) return NotFound();
+            _luceneSearchService.IndexTemplates(new List<Template> { template });
+            return Redirect("/Template/Index");
         }
 
 

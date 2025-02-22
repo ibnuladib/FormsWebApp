@@ -17,6 +17,7 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.R
 builder.Services.AddScoped<ITemplateService, TemplateService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAnswerService, AnswerService>();
+builder.Services.AddSingleton<LuceneSearchService>();
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 builder.Services.AddAuthorization();
@@ -117,6 +118,17 @@ using (var scope = app.Services.CreateScope())
         }
     }
 
+}
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<FormsWebAppDbContext>();
+    var luceneService = scope.ServiceProvider.GetRequiredService<LuceneSearchService>();
+
+    var templates = dbContext.Templates.AsNoTracking().ToList();
+    if (templates.Any())
+    {
+        luceneService.Reindex(templates);
+    }
 }
 
 app.Run();

@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using FormsWebApplication.Services;
+using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json;
 
 namespace FormsWebApplication.Controllers
 {
@@ -73,6 +75,18 @@ namespace FormsWebApplication.Controllers
             }
         }
 
+
+
+        [HttpGet("SearchTags")]
+        public async Task<IActionResult> SearchTags(string query)
+        {
+            if(string.IsNullOrEmpty(query))
+                return BadRequest("Query cannot be empty");
+
+            var tags = await _templateService.SearchTagsAsync(query);
+            return Ok(tags); 
+        }
+
         [HttpGet]
         public new async Task<IActionResult> Response(int id)
         {
@@ -124,8 +138,9 @@ namespace FormsWebApplication.Controllers
         [HttpPost("create")]
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> Create(
-    [FromForm] Template template,
-    [FromForm] string? selectedUserIds)  // Change from List<string> to string
+            [FromForm] Template template,
+            [FromForm] string? selectedUserIds,
+            [FromForm] string tagNames)
         {
             try
             {
@@ -135,6 +150,10 @@ namespace FormsWebApplication.Controllers
 
                 template.AuthorId = userId;
                 ApplyVisibilitySettings(template, selectedUserIds);
+
+                var tagList = string.IsNullOrEmpty(tagNames) ? new List<string>(): JsonConvert.DeserializeObject<List<string>>(tagNames);
+
+                await _templateService.SetTagsForTemplateAsync(template, tagList);
 
                 var templateId = await _templateService.CreateTemplateAsync(template, userId);
                 return RedirectToAction("Details", new { id = templateId });

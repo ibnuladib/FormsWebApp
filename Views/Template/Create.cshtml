@@ -45,10 +45,11 @@
         <input type="hidden" id="selectedUserIds" name="selectedUserIds" />
     </div>
 
-    <label for="tags">Tags</label>
-    <input id="tagInput" name="tags" placeholder="Enter tags..." />
-
-
+    <input type="hidden" name="tagNames" id="tagValues">
+    <div class="mb-3">
+        <label for="tagInput" class="form-label">Tags</label>
+        <input id="tagInput" placeholder="Enter tags..." class="form-control">
+    </div>
 
 	<h4>Custom Questions</h4>
 	<button type="button" id="addQuestionBtn" class="btn btn-secondary">+ Add Question</button>
@@ -247,11 +248,41 @@
 
 </script>
 
-
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-        var input = document.getElementById("tagInput");
-        new Tagify(input);
+        let tagInput = document.querySelector("#tagInput");
+        let tagValues = document.querySelector("#tagValues");
+
+        // Initialize Tagify
+        let tagify = new Tagify(tagInput, {
+            whitelist: [], // Will be updated dynamically
+            dropdown: {
+                maxItems: 10,
+                classname: "tags-dropdown",
+                enabled: 1, // Show dropdown as soon as user types
+                closeOnSelect: false
+            }
+        });
+
+        // Fetch existing tags for autocomplete
+        tagInput.addEventListener("input", async function () {
+            let query = tagInput.value.trim();
+            if (query.length < 2) return;
+
+            try {
+                let response = await fetch(`/Template/SearchTags?query=${encodeURIComponent(query)}`);
+                let tags = await response.json();
+                tagify.settings.whitelist = tags.map(tag => tag.name);
+                tagify.dropdown.show();
+            } catch (error) {
+                console.error("Error fetching tags:", error);
+            }
+        });
+
+        // Update hidden input before form submission
+        document.querySelector("form").addEventListener("submit", function () {
+            tagValues.value = JSON.stringify(tagify.value.map(tag => tag.value));
+        });
     });
 </script>
 

@@ -2,6 +2,7 @@
 using FormsWebApplication.Data;
 using FormsWebApplication.Interface;
 using FormsWebApplication.Models;
+using FormsWebApplication.Models.FormsWebApplication.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -21,6 +22,37 @@ namespace FormsWebApplication.Services
             _luceneSearchService = luceneSearchService;
             _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
 
+        }
+
+        public async Task<List<string>> SearchTagsAsync(string query)
+        {
+            return await _context.Tags
+                .Where(t => t.TName.StartsWith(query))
+                .Select(t => t.TName)
+                .ToListAsync();
+        }
+
+        public async Task SetTagsForTemplateAsync(Template template, List<string>? tagNames)
+        {
+            if (tagNames == null || !tagNames.Any())
+                return;
+            var existingTags = await _context.Tags
+                .Where(t => tagNames.Contains(t.TName))
+                .ToListAsync();
+
+            var newTags = tagNames.Except(existingTags.Select(t => t.TName))
+                .Select(name => new Tag { TName = name })
+                .ToList();
+
+            if (newTags.Any())
+            {
+                _context.Tags.AddRange(newTags);
+                await _context.SaveChangesAsync();
+            }
+
+            template.TemplateTags = existingTags.Concat(newTags)
+                .Select( tag => new TemplateTag { Tag = tag })
+                .ToList();
         }
 
         public void CallReIndex()

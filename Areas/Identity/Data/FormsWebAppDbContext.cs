@@ -17,6 +17,7 @@ public class FormsWebAppDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Comment> Comments { get; set; }
     public DbSet<Like> Likes { get; set; }
     public DbSet<Tag> Tags { get; set; }
+    public DbSet<TemplateTag> TemplateTags { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

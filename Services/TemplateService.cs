@@ -13,12 +13,23 @@ namespace FormsWebApplication.Services
     {
         private readonly FormsWebAppDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly LuceneSearchService _luceneSearchService;
 
-        public TemplateService(FormsWebAppDbContext context, UserManager<ApplicationUser> userManager)
+        public TemplateService(FormsWebAppDbContext context, UserManager<ApplicationUser> userManager, LuceneSearchService luceneSearchService)
         { 
             _context = context;
+            _luceneSearchService = luceneSearchService;
             _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
 
+        }
+
+        public void CallReIndex()
+        {
+            var templates =_context.Templates
+                .Include(t => t.Author)
+                .Where(t => t.Visibility == TemplateVisibility.Public)
+                .ToList();
+                _luceneSearchService.Reindex(templates);
         }
 
         public async Task<List<Template>> GetLatestTemplatesAsync(int skip, int take)
@@ -30,6 +41,7 @@ namespace FormsWebApplication.Services
                 .Include(t => t.Likes)
                 .Include(t => t.Comments)
                 .Include(t => t.Author)
+                .Where(t => t.Visibility == TemplateVisibility.Public)
                 .ToListAsync();
         }
 
@@ -72,15 +84,19 @@ namespace FormsWebApplication.Services
         }
 
 
-        public async Task<Template?> GetTemplateByIdAsync(int id)
+        public async Task<Template?> GetTemplateByIdAsync(int id, string userId, bool isAdmin)
         {
             return await _context.Templates
                 .Include(t => t.TemplateTags)
                 .Include(t => t.Author)
                 .Include(t => t.Likes)
-                .FirstOrDefaultAsync(t => t.Id == id);
-
-
+                .Include(t => t.AllowedUsers)
+                .Where(t => t.Id == id)
+                .Where(t => isAdmin ||
+                       (t.Visibility == TemplateVisibility.Public ||
+                       (t.Visibility == TemplateVisibility.Restricted && t.AllowedUsers.Any(u => u.Id == userId)) ||
+                       (t.Visibility == TemplateVisibility.Private && t.AuthorId == userId)))
+                .FirstOrDefaultAsync();
         }
 
         public async Task<bool> SubmitResponseAsync(Answer answer, string userId)
@@ -195,18 +211,15 @@ namespace FormsWebApplication.Services
                 .FirstOrDefaultAsync(t => t.Id == templateId);
 
         }
-        public async Task<bool> UpdateTemplateAsync(int templateId, Template updatedTemplate, string userId)
+        public async Task<bool> UpdateTemplateAsync(int templateId, Template updatedTemplate)
         {
             var template = await _context.Templates
                 .FirstOrDefaultAsync(t => t.Id == templateId);
-            bool isAdmin = await _userManager.IsInRoleAsync(await _userManager.FindByIdAsync(userId), "Admin");
-            if (template.AuthorId != userId && !isAdmin)
-            {
-                Console.WriteLine($"User {userId} is not authorized to update this template.");
-                return false;
-            }
+
+            if (template == null) return false;
             template.Title = updatedTemplate.Title ?? template.Title;
             template.Title = updatedTemplate.Title ?? template.Title;
+            template.Description = updatedTemplate.Description ?? template.Description;
 
             // Custom String Fields
             template.CustomString1State = template.CustomString1State || updatedTemplate.CustomString1State;
@@ -277,13 +290,12 @@ namespace FormsWebApplication.Services
         public async Task<bool> DeleteTemplateAsync(int templateId)
         {
             var template = await _context.Templates
-                .Include(t => t.Likes)   
-                .Include(t => t.Comments)  
-                .Include(t => t.Author)  
                 .FirstOrDefaultAsync(t => t.Id == templateId);
+
 
             if (template == null)
                 return false;
+            template.AllowedUsers = null;
 
             var answers = await _context.Answers
                 .Where(a => a.TemplateId == templateId)

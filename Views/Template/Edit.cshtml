@@ -18,6 +18,12 @@
                 <input asp-for="Title" class="form-control" required />
             </div>
 
+            <div class="mb-3">
+                <label asp-for="Description" class="form-label">Description</label>
+                <textarea id="Description" name="Description" asp-for="Description" class="form-control"></textarea>
+            </div>
+
+
             <hr />
             <h4>Questions</h4>
 
@@ -79,7 +85,7 @@
             }
 
             <button type="submit" class="btn btn-primary">Save</button>
-            <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+            <a href="/Template/Index" class="btn btn-secondary">Cancel</a>
         </form>
     </div>
 </div>

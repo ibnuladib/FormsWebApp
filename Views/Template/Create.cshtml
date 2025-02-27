@@ -2,6 +2,19 @@
 @{
 	ViewData["Title"] = "Create Template";
 }
+
+<style>
+    .user-dropdown {
+        max-height: 200px;
+        overflow-y: auto;
+        background: white;
+    }
+
+    .badge .btn-close {
+        padding: 0.25rem;
+        line-height: 1;
+    }
+</style>
 <h2>Create Template</h2>
 
 <form id="CreateTemplateForm" asp-controller="Template" asp-action="Create" method="post">
@@ -12,15 +25,30 @@
 		<span asp-validation-for="Title" class="text-danger"></span>
 	</div>
     <div class="mb-3">
-        <label for="description" class="form-label">Description</label>
-        <textarea id="description" name="Description" class="form-control"></textarea>
+        <label for="Description" class="form-label">Description</label>
+        <textarea id="Description" name="Description" class="form-control"></textarea>
     </div>
 
-	@* <div class="form-group"> *@
-	@* 	<label>Tags</label> *@
-	@* 	<input type="text" id="tagsInput" class="form-control" placeholder="Enter tags..." /> *@
-	@* 	<div id="tagsDropdown" class="dropdown-menu"></div> *@
-	@* </div> *@
+    <div class="form-group">
+        <label for="visibility">Visibility</label>
+        <select id="visibility" name="Visibility" class="form-control">
+            <option value="Public">Public</option>
+            <option value="Restricted">Restricted</option>
+            <option value="Private">Private</option>
+        </select>
+    </div>
+
+    <div id="userSelectionContainer" style="display: none;">
+        <label for="userSearch">Select Users</label>
+        <input type="text" id="userSearch" class="form-control" placeholder="Search users by name or email" />
+        <div id="selectedUsers" class="mt-2"></div>
+        <input type="hidden" id="selectedUserIds" name="selectedUserIds" />
+    </div>
+
+    <label for="tags">Tags</label>
+    <input id="tagInput" name="tags" placeholder="Enter tags..." />
+
+
 
 	<h4>Custom Questions</h4>
 	<button type="button" id="addQuestionBtn" class="btn btn-secondary">+ Add Question</button>
@@ -30,7 +58,7 @@
 </form>
 
 <script>
-    new EasyMDE({ element: document.getElementById("description") });
+    new EasyMDE({ element: document.getElementById("Description") });
 </script>
 
 <script>
@@ -125,6 +153,105 @@
         questionDiv.appendChild(hiddenField);
         questionDiv.appendChild(stateField);
         container.appendChild(questionDiv);
+    });
+</script>
+
+<script>
+        document.addEventListener("DOMContentLoaded", function () {
+        const visibilitySelect = document.getElementById('visibility');
+        const userSearch = document.getElementById('userSearch');
+        const selectedUsersContainer = document.getElementById('selectedUsers');
+        const hiddenInput = document.getElementById('selectedUserIds');
+
+        let selectedUsers = [];
+        visibilitySelect.addEventListener('change', function () {
+            const isRestricted = this.value === 'Restricted';
+            document.getElementById('userSelectionContainer').style.display = isRestricted ? 'block' : 'none';
+
+            if (!isRestricted) {
+                selectedUsers = [];
+                updateSelectedUsers();
+            }
+        });
+
+        userSearch.addEventListener('input', async function (e) {
+            const query = e.target.value.trim();
+            if (query.length < 2) return; 
+            try {
+                const response = await fetch(`/Admin/SearchUsers?query=${encodeURIComponent(query)}`);
+                if (!response.ok) throw new Error("Search request failed");
+                const users = await response.json();
+                showUserDropdown(users);
+            } catch (error) {
+                console.error('Search failed:', error);
+            }
+        });
+
+        function showUserDropdown(users) {
+            const existingDropdown = document.querySelector('.user-dropdown');
+            if (existingDropdown) existingDropdown.remove();
+
+            const dropdown = document.createElement('div');
+            dropdown.className = 'user-dropdown list-group mt-1 border rounded';
+            dropdown.style.position = 'absolute';
+            dropdown.style.zIndex = '1000';
+            dropdown.style.width = userSearch.offsetWidth + 'px';
+
+            users.forEach(user => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'list-group-item list-group-item-action';
+                button.innerHTML = `
+                    <div>${user.firstName} ${user.lastName}</div>
+                    <small class="text-muted">${user.email}</small>
+                `;
+                button.onclick = () => addUser(user);
+                dropdown.appendChild(button);
+            });
+
+            userSearch.parentNode.appendChild(dropdown);
+        }
+
+        function addUser(user) {
+            if (!selectedUsers.some(u => u.id === user.id)) {
+                selectedUsers.push(user);
+                updateSelectedUsers();
+                userSearch.value = '';
+                document.querySelector('.user-dropdown')?.remove();
+            }
+        }
+
+        function updateSelectedUsers() {
+            hiddenInput.value = selectedUsers.map(u => u.id).join(',');
+
+            selectedUsersContainer.innerHTML = selectedUsers
+                .map(user => `
+                    <div class="badge bg-primary me-1 mb-1">
+                        ${user.firstName} ${user.lastName}
+                        <button type="button" class="btn-close btn-close-white ms-1" onclick="removeUser('${user.id}')"></button>
+                    </div>
+                `).join('');
+        }
+
+        window.removeUser = (userId) => {
+            selectedUsers = selectedUsers.filter(u => u.id !== userId);
+            updateSelectedUsers();
+        };
+
+        document.addEventListener("click", function (event) {
+            if (!userSearch.contains(event.target)) {
+                document.querySelector('.user-dropdown')?.remove();
+            }
+        });
+    });
+
+</script>
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        var input = document.getElementById("tagInput");
+        new Tagify(input);
     });
 </script>
 

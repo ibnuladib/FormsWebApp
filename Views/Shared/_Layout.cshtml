@@ -10,7 +10,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/darkreader@4.9.58/darkreader.min.js"></script>
+
 </head>
+
 <body>
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
@@ -35,10 +38,19 @@
 
                 <div class="navbar-collapse collapse d-sm-inline-flex flex-sm-row-reverse">
                     <partial name="_LoginPartial.cshtml" />
+                    <div class="form-check form-switch">
+						<input class="form-check-input" type="checkbox" role="switch" id="darkmode-toggle">
+                        <label class="form-check-label me-5" for="darkmode-toggle">Dark Mode</label>
+                    </div>
                 </div>
             </div>
         </nav>
     </header>
+    <!-- Tagify CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@@yaireo/tagify/dist/tagify.css" />
+
+    <!-- Tagify JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@@yaireo/tagify"></script>
 
     <div class="container">
         <main role="main" class="pb-3">
@@ -57,3 +69,22 @@
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
+<script>
+	const toggle = document.getElementById('darkmode-toggle');
+	if (localStorage.getItem('darkMode') === 'enabled') {
+	  toggle.checked = true;
+	  DarkReader.enable();
+	}
+
+	toggle.addEventListener('change', function() {
+	  if (this.checked) {
+		DarkReader.enable();
+		localStorage.setItem('darkMode', 'enabled');
+	  } else {
+		DarkReader.disable();
+		localStorage.setItem('darkMode', 'disabled');
+	  }
+	});
+	DarkReader.setFetchMethod(window.fetch);
+</script>
+

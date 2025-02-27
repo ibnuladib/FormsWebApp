@@ -5,7 +5,7 @@ namespace FormsWebApplication.Interface
     public interface ITemplateService
     {
         Task<List<Template>> GetUserTemplatesAsync(string userId);
-        Task<Template?> GetTemplateByIdAsync(int templateId);
+        Task<Template?> GetTemplateByIdAsync(int templateId, string userId, bool isAdmin);
         Task<int> CreateTemplateAsync(Template template, string userId);
         Task<List<Template>> GetLatestTemplatesAsync(int skip, int take);
 
@@ -19,10 +19,12 @@ namespace FormsWebApplication.Interface
         Task<List<Comment>> GetCommentsAsync(int templateId);
 
         Task<Template?> GetTemplateForEditAsync(int templateId);
-        Task<bool> UpdateTemplateAsync(int templateId, Template updatedTemplate, string userId);
+        Task<bool> UpdateTemplateAsync(int templateId, Template updatedTemplate);
 
         Task<bool> DeleteTemplateAsync(int templateId);
         int GetAnswerCount(int templateId);
+
+        void CallReIndex();
 
     }
 

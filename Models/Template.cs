@@ -20,6 +20,10 @@ namespace FormsWebApplication.Models
 
         public string? Description { get; set; }
 
+        public TemplateVisibility Visibility { get; set; } = TemplateVisibility.Public;
+
+        public List<ApplicationUser>? AllowedUsers { get; set; } = new();
+
         public ICollection<TemplateTag> TemplateTags { get; set; } = new List<TemplateTag>();
 
         public DateTime DateCreated { get; set; } = DateTime.UtcNow;

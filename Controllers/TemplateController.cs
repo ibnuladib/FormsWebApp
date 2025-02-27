@@ -1,209 +1,304 @@
 ﻿using System.Security.Claims;
 using FormsWebApplication.Interface;
 using FormsWebApplication.Models;
-using FormsWebApplication.Services;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
+using FormsWebApplication.Services;
 
 namespace FormsWebApplication.Controllers
 {
+    [Authorize]
     public class TemplateController : Controller
     {
         private readonly ITemplateService _templateService;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ILogger<TemplateController> _logger;
-        private readonly LuceneSearchService _luceneSearchService;
 
-        public TemplateController(ITemplateService templateService, UserManager<ApplicationUser> userManager, ILogger<TemplateController> logger, LuceneSearchService luceneSearchService)
+        public TemplateController(
+            ITemplateService templateService,
+            UserManager<ApplicationUser> userManager,
+            ILogger<TemplateController> logger
+            )
         {
             _templateService = templateService ?? throw new ArgumentNullException(nameof(templateService));
             _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
             _logger = logger;
-            _luceneSearchService = luceneSearchService;
         }
 
+        private string CurrentUserId => _userManager.GetUserId(User)
+            ?? throw new UnauthorizedAccessException("User not authenticated");
 
-        // GET: TemplateController
+        private async Task<Template> GetTemplateOrThrow(int id)
+        {
+            bool isAdmin = await IsAdminAsync(CurrentUserId);
+            return await _templateService.GetTemplateByIdAsync(id, CurrentUserId, isAdmin)
+                ?? throw new KeyNotFoundException($"Template {id} not found");
+        }
+
+        private IActionResult HandleError(Exception ex, string message = "An error occurred")
+        {
+            _logger.LogError(ex, message);
+            return ex switch
+            {
+                UnauthorizedAccessException => Unauthorized(ex.Message),
+                KeyNotFoundException => NotFound(ex.Message),
+                _ => StatusCode(500, message)
+            };
+        }
+
+        private async Task<bool> IsAuthorized(Template template, string userId)
+        {
+            if (template.AuthorId == userId) return true;
+            return await IsAdminAsync(userId);
+        }
+
+        private async Task<bool> IsAdminAsync(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            return user != null && await _userManager.IsInRoleAsync(user, "Admin");
+        }
+
+        [Authorize]
         public async Task<IActionResult> Index()
         {
-            var userId = _userManager.GetUserId(User);
-            if (string.IsNullOrEmpty(userId))
+            try
             {
-                return Unauthorized();
+                return View(await _templateService.GetUserTemplatesAsync(CurrentUserId));
             }
-
-            var templates = await _templateService.GetUserTemplatesAsync(userId);
-            return View(templates);
+            catch (Exception ex)
+            {
+                return HandleError(ex, "Failed to load templates");
+            }
         }
 
         [HttpGet]
-        public async Task<IActionResult> Response(int id)
+        public new async Task<IActionResult> Response(int id)
         {
-            var template = await _templateService.GetTemplateByIdAsync(id);
-            if (template == null)
+            try
             {
-                return NotFound();
+                return View(await GetTemplateOrThrow(id));
             }
-            else
+            catch (Exception ex)
             {
-                return View(template);
+                return HandleError(ex);
             }
         }
 
         [Authorize]
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> SubmitResponse(Answer model)
         {
-            string? userId = _userManager.GetUserId(User);
-            model.UserId = _userManager.GetUserId(User);
-            if (string.IsNullOrEmpty(model.UserId))
+            try
             {
-                return Unauthorized();
+                model.UserId = CurrentUserId;
+                return await _templateService.SubmitResponseAsync(model, CurrentUserId)
+                    ? RedirectToAction("Index", "Home")
+                    : BadRequest("Failed to submit response");
             }
-
-            bool success = await _templateService.SubmitResponseAsync(model, userId);
-            if (!success)
+            catch (Exception ex)
             {
-                return BadRequest();
+                return HandleError(ex, "Response submission failed");
             }
-
-            return RedirectToAction("Index", "Home");
         }
 
 
-
-
-
-        // GET: TemplateController/Details/5
+        [Authorize]
         public async Task<IActionResult> Details(int id)
         {
-            var template = await _templateService.GetTemplateByIdAsync(id);
-
-            if (template == null)
+            try
             {
-                return NotFound();
+                return View(await GetTemplateOrThrow(id));
             }
-
-            return View(template);
+            catch (Exception ex)
+            {
+                return HandleError(ex);
+            }
         }
 
+        public ActionResult Create() => View();
 
-        // GET: TemplateController/Create
-        public ActionResult Create()
-        {
-            return View();
-        }
-
-        // POST: TemplateController/Create
+        [Authorize]
         [HttpPost("create")]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Create([FromForm] Template template)
+        public async Task<ActionResult> Create(
+    [FromForm] Template template,
+    [FromForm] string? selectedUserIds)  // Change from List<string> to string
         {
-            string? userId = _userManager.GetUserId(User);
-            if (string.IsNullOrEmpty(userId))
+            try
             {
-                return Unauthorized();
+                var userId = CurrentUserId;
+                if (string.IsNullOrEmpty(userId))
+                    return Unauthorized();
+
+                template.AuthorId = userId;
+                ApplyVisibilitySettings(template, selectedUserIds);
+
+                var templateId = await _templateService.CreateTemplateAsync(template, userId);
+                return RedirectToAction("Details", new { id = templateId });
             }
-            int templateId = await _templateService.CreateTemplateAsync(template, userId);
-            _luceneSearchService.IndexTemplates(new List<Template> { template });
-          // return CreatedAtAction(nameof(GetTemplateById), new { id = templateId }, template);
-            return RedirectToAction("Details", new { id = templateId });
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Template creation failed");
+                return (ActionResult)HandleError(ex, "Template creation failed");
+            }
         }
+
+        private void ApplyVisibilitySettings(Template template, string? selectedUserIds)
+        {
+            if (template.Visibility == TemplateVisibility.Restricted && !string.IsNullOrEmpty(selectedUserIds))
+            {
+                var userIds = selectedUserIds.Split(',').Distinct().ToList();
+                var existingUsers = _userManager.Users
+                    .Where(u => userIds.Contains(u.Id))
+                    .ToList();
+
+                template.AllowedUsers = existingUsers;
+            }
+            else
+            {
+                template.AllowedUsers = null;
+            }
+        }
+
 
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetTemplateById(int id)
         {
-            var template = await _templateService.GetTemplateByIdAsync(id);
-            if (template == null) return NotFound();
-
-            return Ok(template);
+            try
+            {
+                return Ok(await GetTemplateOrThrow(id));
+            }
+            catch (Exception ex)
+            {
+                return HandleError(ex);
+            }
         }
 
-        // GET: TemplateController/Edit/5
+        [Authorize]
+        [HttpGet]
         public async Task<ActionResult> Edit(int id)
         {
-            var template = await _templateService.GetTemplateForEditAsync(id);
-            if (template == null) return NotFound();
-            return View(template);
+            try
+            {
+                return View(await _templateService.GetTemplateForEditAsync(id)
+                    ?? throw new KeyNotFoundException("Template not found"));
+            }
+            catch (Exception ex)
+            {
+                return (ActionResult)HandleError(ex);
+            }
         }
 
-        // POST: TemplateController/Edit/5
+        [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> Edit(int id, [FromForm] Template updatedTemplate)
         {
-            string? userId = _userManager?.GetUserId(User);
-            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+            try
+            {
+                var existing = await GetTemplateOrThrow(id);
+                if (!await IsAuthorized(existing, CurrentUserId))
+                {
+                    return Forbid();
+                }
+                var updateSuccessful = await _templateService.UpdateTemplateAsync(id, updatedTemplate);
 
-            var existingTemplate = await _templateService.GetTemplateForEditAsync(id);
-            if (existingTemplate == null) return NotFound();
 
-            updatedTemplate.AuthorId = userId;
-            updatedTemplate.Author = existingTemplate.Author;
-            _logger.LogInformation("Updated Template Data: {@updatedTemplate}", updatedTemplate);
+                    // Only reindex if update was successful
+                    _templateService.CallReIndex();
+                    return RedirectToAction("Details", new { id });
 
-            bool success = await _templateService.UpdateTemplateAsync(id, updatedTemplate, userId);
-            if (!success) return BadRequest("Could not update Template");
-            _luceneSearchService.IndexTemplates(new List<Template> { existingTemplate });
-            return RedirectToAction("Details", new { id });
+            }
+            catch (Exception ex)
+            {
+                return (ActionResult)HandleError(ex, "Template update failed");
+            }
         }
 
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> Delete(int id)
         {
-            var template = await _templateService.GetTemplateByIdAsync(id);
-            bool success = await _templateService.DeleteTemplateAsync(id);
+            try
+            {
+                var template = await GetTemplateOrThrow(id);
 
-            if (!success)
-                return NotFound();
-            if (template == null) return NotFound();
-            _luceneSearchService.IndexTemplates(new List<Template> { template });
-            return Redirect("/Template/Index");
+                if (!await IsAuthorized(template, CurrentUserId))
+                {
+                    return Forbid();
+                }
+
+                return await _templateService.DeleteTemplateAsync(id)
+                    ? Redirect("Template/Index")
+                    : BadRequest("Delete failed");
+            }
+            catch (Exception ex)
+            {
+                return HandleError(ex, "Template deletion failed");
+            }
         }
 
-
-        [HttpPost]
-        [Route("Template/Like/{templateId}")]
+        [Authorize]
+        [HttpPost("Template/Like/{templateId}")]
         public async Task<IActionResult> LikeTemplate(int templateId)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier); // Get logged-in user
-            if (userId == null)
+            try
             {
-                return Unauthorized();
+                var success = await _templateService.LikeTemplateAsync(templateId, CurrentUserId);
+                return Ok(new
+                {
+                    success,
+                    likeCount = success ? await _templateService.GetLikeCountAsync(templateId) : 0
+                });
             }
-
-            var result = await _templateService.LikeTemplateAsync(templateId, userId);
-
-            return Ok(new { success = result, likeCount = await _templateService.GetLikeCountAsync(templateId) });
+            catch (Exception ex)
+            {
+                return HandleError(ex, "Like operation failed");
+            }
         }
 
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> AddComment(int templateId, string content)
         {
-            var userId = _userManager.GetUserId(User);
-            if (userId == null) { return Unauthorized(); }
-            if (string.IsNullOrEmpty(content)) { return BadRequest("empty comment"); }
+            try
+            {
+                if (string.IsNullOrWhiteSpace(content))
+                    return BadRequest("Comment content required");
 
-            var result = await _templateService.AddCommentAsync(templateId, userId, content);
-            return Ok(new { success = result, message = "Comment Added Sucessfully" });
+                return Ok(new
+                {
+                    success = await _templateService.AddCommentAsync(templateId, CurrentUserId, content),
+                    message = "Comment added successfully"
+                });
+            }
+            catch (Exception ex)
+            {
+                return HandleError(ex, "Comment addition failed");
+            }
         }
 
         [HttpGet]
         public async Task<IActionResult> GetComments(int templateId)
         {
-            var comments = await _templateService.GetCommentsAsync(templateId);
-            return Ok(comments.Select(c => new
+            try
             {
-                c.Id,
-                c.Content,
-                c.Date,
-                UserName = c.User.UserName
-            }));
+                var comments = await _templateService.GetCommentsAsync(templateId);
+                return Ok(comments.Select(c => new {
+                    c.Id,
+                    c.Content,
+                    c.Date,
+                    c.User.UserName
+                }));
+            }
+            catch (Exception ex)
+            {
+                return HandleError(ex, "Failed to load comments");
+            }
         }
     }
 }
-

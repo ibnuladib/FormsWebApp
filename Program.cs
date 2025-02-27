@@ -4,6 +4,7 @@ using FormsWebApplication.Data;
 using FormsWebApplication.Models;
 using FormsWebApplication.Interface;
 using FormsWebApplication.Services;
+using Lucene.Net.Store;
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("FormsWebAppDbContextConnection") ?? throw new InvalidOperationException("Connection string 'FormsWebAppDbContextConnection' not found.");
 
@@ -124,7 +125,10 @@ using (var scope = app.Services.CreateScope())
     var dbContext = scope.ServiceProvider.GetRequiredService<FormsWebAppDbContext>();
     var luceneService = scope.ServiceProvider.GetRequiredService<LuceneSearchService>();
 
-    var templates = dbContext.Templates.AsNoTracking().ToList();
+    var templates = dbContext.Templates
+    .Include(t => t.Author)
+    .Where(t => t.Visibility == TemplateVisibility.Public)
+    .ToList();
     if (templates.Any())
     {
         luceneService.Reindex(templates);

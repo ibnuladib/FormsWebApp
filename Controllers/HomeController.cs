@@ -61,8 +61,11 @@ namespace FormsWebApplication.Controllers
         {
             if (string.IsNullOrWhiteSpace(query))
                 return View(new List<Template>());
-            var templates = _context.Templates.Include(t => t.Author).ToList();
-            _luceneSearchService.Reindex(templates);
+            var templates = _context.Templates
+                .Include(t => t.Author)
+                .Where(t => t.Visibility == TemplateVisibility.Public)
+                .ToList();
+           // _luceneSearchService.Reindex(templates);
             var results = _luceneSearchService.SearchTemplates(query);
             return View("SearchResults", results);
         }

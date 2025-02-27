@@ -30,33 +30,6 @@ namespace FormsWebApplication.Services
                 Directory.CreateDirectory(_indexPath);
         }
 
-        public void IndexTemplates(List<Template> templates)
-        {
-            using var dir = FSDirectory.Open(new DirectoryInfo(_indexPath));
-            using var analyzer = new StandardAnalyzer(_luceneVersion);
-            var config = new IndexWriterConfig(_luceneVersion, analyzer) { OpenMode = OpenMode.CREATE_OR_APPEND };
-            using var writer = new IndexWriter(dir, config);
-            
-
-            foreach (var template in templates)
-            {
-                var Email = template.Author?.Email ?? "Unknown";
-                var doc = new Document();
-                doc.Add(new StringField("Id", template.Id.ToString(), Field.Store.YES));
-                doc.Add(new StringField("AuthorId", template.AuthorId.ToString(), Field.Store.YES));
-                doc.Add(new StringField("Email",Email ?? "Unknown", Field.Store.YES)); 
-                doc.Add(new TextField("Title", template.Title, Field.Store.YES));
-                doc.Add(new TextField("Description", template.Description ?? "", Field.Store.YES));
-
-                Console.WriteLine($"Indexing: {template.Title}, Email: {Email}"); 
-
-
-                writer.UpdateDocument(new Term("Id", template.Id.ToString()), doc);
-            }
-
-            writer.Commit();
-        }
-
         public List<Template> SearchTemplates(string queryText)
         {
             using var dir = FSDirectory.Open(new DirectoryInfo(_indexPath));

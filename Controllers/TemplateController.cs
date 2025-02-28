@@ -77,7 +77,7 @@ namespace FormsWebApplication.Controllers
 
 
 
-        [HttpGet("SearchTags")]
+        [HttpGet]
         public async Task<IActionResult> SearchTags(string query)
         {
             if(string.IsNullOrEmpty(query))
@@ -138,12 +138,13 @@ namespace FormsWebApplication.Controllers
         [HttpPost("create")]
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> Create(
-            [FromForm] Template template,
-            [FromForm] string? selectedUserIds,
-            [FromForm] string tagNames)
-        {
+                [FromForm] Template template,
+                [FromForm] string? selectedUserIds,
+                [FromForm] string tagNames)
+                {
             try
             {
+                _logger.LogInformation("Recieved Tags:"+tagNames);
                 var userId = CurrentUserId;
                 if (string.IsNullOrEmpty(userId))
                     return Unauthorized();
@@ -151,7 +152,9 @@ namespace FormsWebApplication.Controllers
                 template.AuthorId = userId;
                 ApplyVisibilitySettings(template, selectedUserIds);
 
-                var tagList = string.IsNullOrEmpty(tagNames) ? new List<string>(): JsonConvert.DeserializeObject<List<string>>(tagNames);
+                var tagList = !string.IsNullOrEmpty(tagNames) ? JsonConvert.DeserializeObject<List<string>>(tagNames): new List<string>();
+
+                _logger.LogInformation("Parsed tags: " + string.Join(", ", tagList));
 
                 await _templateService.SetTagsForTemplateAsync(template, tagList);
 
@@ -252,7 +255,7 @@ namespace FormsWebApplication.Controllers
                 }
 
                 return await _templateService.DeleteTemplateAsync(id)
-                    ? Redirect("Template/Index")
+                    ? RedirectToAction("Template/Index")
                     : BadRequest("Delete failed");
             }
             catch (Exception ex)

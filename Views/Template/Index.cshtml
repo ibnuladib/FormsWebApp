@@ -33,7 +33,11 @@
                 <td><a asp-controller="Answer" asp-action="Average" asp-route-templateId="@template.Id" class="btn btn-primary">View Aggregation</a></td>
                 <td><a href="/Template/Edit/@template.Id" class="btn btn-primary">Edit</a></td>
                 <td><a href="/Template/Details/@template.Id" class="btn btn-primary">Details</a></td>
-                <td><a asp-controller="Template" asp-action="Delete" asp-route-id="@template.Id" class="btn btn-danger">Delete</a></td>
+                <td>
+                    <form asp-controller="Template" asp-action="Delete" asp-route-id="@template.Id" method="post">
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                </td>
             </tr>
         }
     </tbody>

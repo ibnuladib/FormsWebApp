@@ -123,6 +123,7 @@ namespace FormsWebApplication.Services
                 .Include(t => t.Author)
                 .Include(t => t.Likes)
                 .Include(t => t.AllowedUsers)
+                .Include(t => t.Comments)
                 .Where(t => t.Id == id)
                 .Where(t => isAdmin ||
                        (t.Visibility == TemplateVisibility.Public ||
@@ -336,6 +337,7 @@ namespace FormsWebApplication.Services
             _context.Answers.RemoveRange(answers);
             _context.Likes.RemoveRange(template.Likes);
             _context.Comments.RemoveRange(template.Comments);
+            _context.TemplateTags.RemoveRange(template.TemplateTags);
 
             _context.Templates.Remove(template);
 

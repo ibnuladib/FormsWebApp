@@ -47,8 +47,8 @@
 
     <input type="hidden" name="tagNames" id="tagValues">
     <div class="mb-3">
-        <label for="tagInput" class="form-label">Tags</label>
-        <input id="tagInput" placeholder="Enter tags..." class="form-control">
+        <label for="tagInput" class="form-label">Tags (Use commas to seperate the tags)</label>
+        <input id="tagInput" name="tagNames" placeholder="Enter tags..." class="form-control">
     </div>
 
 	<h4>Custom Questions</h4>
@@ -249,37 +249,50 @@
 </script>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        let tagInput = document.querySelector("#tagInput");
-        let tagValues = document.querySelector("#tagValues");
+    console.log(typeof Tagify);
 
-        // Initialize Tagify
+    document.addEventListener("DOMContentLoaded", function () {
+        const tagInput = document.getElementById("tagInput");
+        if (!tagInput) {
+            console.error("Tag input field not found!");
+            return;
+        }
+        console.log("Tag input found!");
+        const tagValues = document.querySelector("#tagValues");
+
         let tagify = new Tagify(tagInput, {
-            whitelist: [], // Will be updated dynamically
+            whitelist: [], 
             dropdown: {
                 maxItems: 10,
                 classname: "tags-dropdown",
-                enabled: 1, // Show dropdown as soon as user types
+                enabled: 1, 
                 closeOnSelect: false
             }
         });
 
-        // Fetch existing tags for autocomplete
-        tagInput.addEventListener("input", async function () {
-            let query = tagInput.value.trim();
-            if (query.length < 2) return;
+        tagify.on("change", function(){
+            let tags = tagify.value.map(tag => tag.value);
+            tagValues.value = JSON.stringify(tags);
+            console.log(tagValues.value);
+        })
+
+        tagify.on("input", async function (e) {
+            let query = e.detail.value.trim();
+            console.log("User typed:", query);
+            if (query.length < 1) return;
 
             try {
                 let response = await fetch(`/Template/SearchTags?query=${encodeURIComponent(query)}`);
                 let tags = await response.json();
-                tagify.settings.whitelist = tags.map(tag => tag.name);
+                console.log("Tags received from backend:", tags);
+
+                tagify.whitelist = tags;
                 tagify.dropdown.show();
             } catch (error) {
                 console.error("Error fetching tags:", error);
             }
         });
 
-        // Update hidden input before form submission
         document.querySelector("form").addEventListener("submit", function () {
             tagValues.value = JSON.stringify(tagify.value.map(tag => tag.value));
         });

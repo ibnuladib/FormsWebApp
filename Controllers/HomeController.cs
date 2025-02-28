@@ -27,29 +27,46 @@ namespace FormsWebApplication.Controllers
         public async Task<IActionResult> Index()
         {
             var templates = await _templateService.GetLatestTemplatesAsync(0, 20);
-
             foreach (var template in templates)
             {
                 template.AnswerCount = _templateService.GetAnswerCount(template.Id);
             }
-
+            var popularTags = await _templateService.GetPopularTagsAsync();
+            ViewBag.Tags = popularTags ?? new List<Tag>();
             return View(templates);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> FilterTemplates(string tag)
+        {
+            var templates = await _templateService.GetTemplatesByTagAsync(tag, 0, 20);
+            return PartialView("_TemplateListPartial", templates);
         }
 
 
         [HttpGet]
-        public async Task<IActionResult> LoadMoreTemplates(int page)
+        public async Task<IActionResult> LoadMoreTemplates(int page, string tag = null)
         {
             int pageSize = 20;
-            var templates = await _templateService.GetLatestTemplatesAsync(page * pageSize, pageSize);
+            List<Template> templates;
 
-            if(templates == null)
+            if (!string.IsNullOrEmpty(tag))
+            {
+                templates = await _templateService.GetTemplatesByTagAsync(tag, page * pageSize, pageSize);
+            }
+            else
+            {
+                templates = await _templateService.GetLatestTemplatesAsync(page * pageSize, pageSize);
+            }
+
+            if (templates == null || !templates.Any())
             {
                 return NoContent();
             }
-            return PartialView("_TemplateListPartial",templates);
 
+            return PartialView("_TemplateListPartial", templates);
         }
+
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
@@ -61,11 +78,7 @@ namespace FormsWebApplication.Controllers
         {
             if (string.IsNullOrWhiteSpace(query))
                 return View(new List<Template>());
-            var templates = _context.Templates
-                .Include(t => t.Author)
-                .Where(t => t.Visibility == TemplateVisibility.Public)
-                .ToList();
-           // _luceneSearchService.Reindex(templates);
+
             var results = _luceneSearchService.SearchTemplates(query);
             return View("SearchResults", results);
         }
@@ -78,6 +91,21 @@ namespace FormsWebApplication.Controllers
             return RedirectToAction("Index");
         }
 
+        public async Task<IActionResult> TemplatesByTag(string tag, int page = 0)
+        {
+            if (string.IsNullOrWhiteSpace(tag))
+                return RedirectToAction("Index");
+
+            int pageSize = 20;
+            var templates = await _templateService.GetTemplatesByTagAsync(tag, page * pageSize, pageSize);
+
+            ViewBag.SelectedTag = tag;
+
+            if (page > 0)
+                return PartialView("_TemplateListPartial", templates); // Load more via AJAX
+
+            return View("Index", templates); // Full-page load
+        }
 
 
 

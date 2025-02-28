@@ -76,15 +76,33 @@ namespace FormsWebApplication.Services
                 .Where(t => t.Visibility == TemplateVisibility.Public)
                 .ToListAsync();
         }
+        public async Task<List<Template>> GetTemplatesByTagAsync(string tagName, int skip, int take)
+        {
+            return await _context.Templates
+                .Where(t => t.Visibility == TemplateVisibility.Public &&
+                            t.TemplateTags.Any(tt => tt.Tag.TName == tagName))
+                .OrderByDescending(t => t.DateCreated)
+                .Skip(skip)
+                .Take(take)
+                .Include(t => t.Likes)
+                .Include(t => t.Comments)
+                .Include(t => t.Author)
+                .ToListAsync();
+        }
+
+        public async Task<List<Tag>> GetPopularTagsAsync(int count = 20)
+        {
+            return await _context.Tags
+                .OrderByDescending(t => t.TemplateTags.Count)
+                .Take(count)
+                .ToListAsync();
+        }
 
 
         public int GetAnswerCount(int templateId)
         {
             return _context.Answers.Count(a => a.TemplateId == templateId);
         }
-
-
-
 
 
         public async Task<List<Template>> GetUserTemplatesAsync(string userId)
@@ -161,11 +179,6 @@ namespace FormsWebApplication.Services
             answer.CustomInt2State = answer.CustomInt2Answer.HasValue && answer.CustomInt2Answer.Value != 0;
             answer.CustomInt3State = answer.CustomInt3Answer.HasValue && answer.CustomInt3Answer.Value != 0;
             answer.CustomInt4State = answer.CustomInt4Answer.HasValue && answer.CustomInt4Answer.Value != 0;
-
-            //answer.CustomCheckbox1State = answer.CustomCheckbox1Answer ?? false;
-            //answer.CustomCheckbox2State = answer.CustomCheckbox2Answer ?? false;
-            //answer.CustomCheckbox3State = answer.CustomCheckbox3Answer ?? false;
-            //answer.CustomCheckbox4State = answer.CustomCheckbox4Answer ?? false;
 
             Console.WriteLine($"Saving response for UserId={answer.UserId}, TemplateId={answer.TemplateId}");
 
@@ -293,18 +306,7 @@ namespace FormsWebApplication.Services
             template.CustomInt4State = template.CustomInt4State || updatedTemplate.CustomInt4State;
             template.CustomInt4Question = updatedTemplate.CustomInt4Question ?? template.CustomInt4Question;
 
-            //// Custom Checkbox Fields
-            //template.CustomCheckbox1State = template.CustomCheckbox1State || updatedTemplate.CustomCheckbox1State;
-            //template.CustomCheckbox1Question = updatedTemplate.CustomCheckbox1Question ?? template.CustomCheckbox1Question;
-
-            //template.CustomCheckbox2State = template.CustomCheckbox2State || updatedTemplate.CustomCheckbox2State;
-            //template.CustomCheckbox2Question = updatedTemplate.CustomCheckbox2Question ?? template.CustomCheckbox2Question;
-
-            //template.CustomCheckbox3State = template.CustomCheckbox3State || updatedTemplate.CustomCheckbox3State;
-            //template.CustomCheckbox3Question = updatedTemplate.CustomCheckbox3Question ?? template.CustomCheckbox3Question;
-
-            //template.CustomCheckbox4State = template.CustomCheckbox4State || updatedTemplate.CustomCheckbox4State;
-            //template.CustomCheckbox4Question = updatedTemplate.CustomCheckbox4Question ?? template.CustomCheckbox4Question;
+           
             _context.Templates.Update(template);
 
             try

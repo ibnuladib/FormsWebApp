@@ -255,7 +255,7 @@ namespace FormsWebApplication.Controllers
                 }
 
                 return await _templateService.DeleteTemplateAsync(id)
-                    ? RedirectToAction("Template/Index")
+                    ?  Redirect("/Template/Index")
                     : BadRequest("Delete failed");
             }
             catch (Exception ex)

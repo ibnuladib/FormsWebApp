@@ -22,5 +22,8 @@ namespace FormsWebApplication.Interface
         void CallReIndex();
         Task<List<string>> SearchTagsAsync(string query);
         Task SetTagsForTemplateAsync(Template template, List<string>? tagNames);
+
+        Task<List<Template>> GetTemplatesByTagAsync(string tagName, int skip, int take);
+        Task<List<Tag>> GetPopularTagsAsync(int count=20);
     }
 }

@@ -29,7 +29,9 @@
                 {
                     <a class="navbar-brand" href="/Template/Index">Template</a>
                     <a class="navbar-brand" href="/Answer/Index">Answer</a>
-                    <a class="navbar-brand" href="/Admin/Index">Admin</a>
+                    @if(User.IsInRole("Admin")){
+                        <a class="navbar-brand" href="/Admin/Index">Admin</a>
+                    }
                 }
                 <form asp-controller="Home" asp-action="Search" method="get" class="d-flex">
                     <input type="text" name="query" class="form-control me-2" placeholder="Search templates..." required>

@@ -1,0 +1,22 @@
+﻿@model FormsWebApplication.Models.CreateAccountRequest
+
+@{
+    ViewData["Title"] = "Create Salesforce Account";
+}
+
+<h2>Create a New Salesforce Account</h2>
+
+@if (ViewBag.SuccessMessage != null)
+{
+    <div class="alert alert-success">@ViewBag.SuccessMessage</div>
+}
+
+<form asp-action="CreateAccount" method="post">
+    <div class="mb-3">
+        <label class="form-label">Account Name</label>
+        <input asp-for="Name" class="form-control" required />
+        <span asp-validation-for="Name" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Create Account</button>
+</form>

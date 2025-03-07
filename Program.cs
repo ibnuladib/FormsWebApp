@@ -19,6 +19,8 @@ builder.Services.AddScoped<ITemplateService, TemplateService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAnswerService, AnswerService>();
 builder.Services.AddSingleton<LuceneSearchService>();
+builder.Services.AddHttpClient<SalesforceService>();
+
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 builder.Services.AddAuthorization();

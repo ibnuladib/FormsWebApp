@@ -1,0 +1,36 @@
+﻿@model FormsWebApplication.Models.CreateContactRequest
+
+@{
+    ViewData["Title"] = "Create Salesforce Contact";
+}
+
+<h2>Create a New Salesforce Contact</h2>
+
+@if (ViewBag.SuccessMessage != null)
+{
+    <div class="alert alert-success">@ViewBag.SuccessMessage</div>
+}
+
+<form asp-action="CreateContact" method="post">
+    <div class="mb-3">
+        <label class="form-label">Account ID</label>
+        <input asp-for="AccountId" class="form-control" required />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">First Name</label>
+        <input asp-for="FirstName" class="form-control" required />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Last Name</label>
+        <input asp-for="LastName" class="form-control" required />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Email</label>
+        <input asp-for="Email" type="email" class="form-control" required />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Create Contact</button>
+</form>

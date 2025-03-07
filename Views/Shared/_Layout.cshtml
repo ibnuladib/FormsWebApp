@@ -32,9 +32,10 @@
                     @if(User.IsInRole("Admin")){
                         <a class="navbar-brand" href="/Admin/Index">Admin</a>
                     }
+                    <a class="nav-link" asp-controller="SalesforceUI" asp-action="CreateAccount">Create Salesforce Account</a>
                 }
                 <form asp-controller="Home" asp-action="Search" method="get" class="d-flex">
-                    <input type="text" name="query" class="form-control me-2" placeholder="Search templates..." required>
+                    <input type="text" name="query" class="form-control me-3" placeholder="Search templates..." required>
                     <button type="submit" class="btn btn-outline-primary">Search</button>
                 </form>
 
